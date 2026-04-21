@@ -2,20 +2,29 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
-// https://vite.dev/config/
 export default defineConfig({
   build: {
     chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
-        manualChunks(id: string) {
-          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/react-router-dom')) {
+        manualChunks(id) {
+          if (
+            id.includes('node_modules/react') ||
+            id.includes('node_modules/react-dom') ||
+            id.includes('node_modules/react-router-dom')
+          ) {
             return 'vendor-react';
           }
-          if (id.includes('node_modules/three') || id.includes('@react-three')) {
+          if (
+            id.includes('node_modules/three') ||
+            id.includes('@react-three')
+          ) {
             return 'vendor-three';
           }
-          if (id.includes('node_modules/chart.js') || id.includes('node_modules/react-chartjs-2')) {
+          if (
+            id.includes('node_modules/chart.js') ||
+            id.includes('node_modules/react-chartjs-2')
+          ) {
             return 'vendor-charts';
           }
           if (id.includes('node_modules/framer-motion')) {
@@ -24,9 +33,9 @@ export default defineConfig({
           if (id.includes('node_modules/firebase')) {
             return 'vendor-firebase';
           }
-        },
-      },
-    },
+        }
+      }
+    }
   },
   plugins: [
     react(),
@@ -63,7 +72,7 @@ export default defineConfig({
               cacheName: 'google-fonts-cache',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // <== 365 days
+                maxAgeSeconds: 60 * 60 * 24 * 365
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -73,5 +82,5 @@ export default defineConfig({
         ]
       }
     })
-  ],
+  ]
 });
