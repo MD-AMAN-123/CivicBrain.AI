@@ -209,6 +209,7 @@ const Login: React.FC = () => {
           font-weight: 600;
           cursor: pointer;
           margin-left: 0.5rem;
+        }
         .toggle-btn {
           background: linear-gradient(135deg, var(--primary), var(--secondary));
           -webkit-background-clip: text;

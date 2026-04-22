@@ -1,8 +1,11 @@
 import React, { Suspense, lazy } from 'react';
 import { ArrowRight, Vote, Globe, Award, Zap } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 const ThreeScene = lazy(() => import('../components/ThreeScene'));
 
 const HomeView: React.FC = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="home-view">
       <Suspense fallback={null}>
@@ -18,7 +21,7 @@ const HomeView: React.FC = () => {
           becoming an informed, active, and powerful citizen.
         </p>
         <div className="hero-actions animate-fade-in" style={{ animationDelay: '0.4s' }}>
-          <button className="btn-primary flex-center gap-2">
+          <button className="btn-primary flex-center gap-2" onClick={() => navigate('/timeline')}>
             Start Your Journey <ArrowRight size={20} />
           </button>
           <button className="btn-outline">Watch Demo</button>

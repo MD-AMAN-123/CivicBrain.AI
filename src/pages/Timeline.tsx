@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { UserPlus, ClipboardList, Megaphone, Vote, BarChart3, CheckCircle2 } from 'lucide-react';
 
 const timelineSteps = [
@@ -48,6 +49,8 @@ const timelineSteps = [
 ];
 
 const Timeline: React.FC = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="timeline-view">
       <div className="timeline-header">
@@ -86,7 +89,11 @@ const Timeline: React.FC = () => {
                   </li>
                 ))}
               </ul>
-              <button className="learn-more-btn" style={{ borderColor: `${step.color}44`, color: step.color }}>
+              <button 
+                className="learn-more-btn" 
+                style={{ borderColor: `${step.color}44`, color: step.color }}
+                onClick={() => navigate('/assistant', { state: { prompt: `Deep dive into ${step.title}: ${step.description}` } })}
+              >
                 Deep Dive Explainer
               </button>
             </div>

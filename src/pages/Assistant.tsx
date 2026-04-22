@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Send, Bot, User, Sparkles, Command } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { explainConcept } from '../services/gemini';
 
 interface Message {
@@ -10,6 +11,7 @@ interface Message {
 }
 
 const Assistant: React.FC = () => {
+  const location = useLocation();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
@@ -19,23 +21,41 @@ const Assistant: React.FC = () => {
     }
   ]);
   const [input, setInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
-  const handleSend = async () => {
-    if (!input.trim()) return;
+  useEffect(() => {
+    if (location.state?.prompt) {
+      handleSend(location.state.prompt);
+    }
+  }, [location.state]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isTyping]);
+
+  const handleSend = async (customInput?: string) => {
+    const textToSend = customInput || input;
+    if (!textToSend.trim() || isTyping) return;
     
     const userMsg: Message = {
       id: Date.now(),
-      text: input,
+      text: textToSend,
       sender: 'user',
       timestamp: new Date()
     };
     
     setMessages(prev => [...prev, userMsg]);
     setInput('');
+    setIsTyping(true);
 
     // Fetch response from AI Service
     try {
-      const response = await explainConcept({ topic: userMsg.text, level: 'beginner' });
+      const response = await explainConcept({ topic: textToSend, level: 'beginner' });
       const aiMsg: Message = {
         id: Date.now() + 1,
         text: response,
@@ -51,7 +71,13 @@ const Assistant: React.FC = () => {
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMsg]);
+    } finally {
+      setIsTyping(false);
     }
+  };
+
+  const handleTopicClick = (topic: string) => {
+    handleSend(`Explain ${topic}`);
   };
 
   return (
@@ -59,7 +85,7 @@ const Assistant: React.FC = () => {
       <div className="chat-container glass-card">
         <header className="chat-header">
           <div className="ai-status">
-            <div className="status-dot"></div>
+            <div className={`status-dot ${isTyping ? 'pulse' : ''}`}></div>
             <Bot size={20} className="text-gradient" />
             <span>CivicBrain AI</span>
           </div>
@@ -83,13 +109,24 @@ const Assistant: React.FC = () => {
               </div>
             </div>
           ))}
+          {isTyping && (
+            <div className="message-wrapper ai">
+              <div className="message-avatar glass-card">
+                <Bot size={18} />
+              </div>
+              <div className="message-bubble glass-card typing-indicator">
+                <span></span><span></span><span></span>
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
         </div>
 
         <div className="input-area">
           <div className="quick-topics">
-            <button className="topic-chip glass-card">Explain EVM</button>
-            <button className="topic-chip glass-card">What is NOTA?</button>
-            <button className="topic-chip glass-card">Registration Help</button>
+            <button className="topic-chip glass-card" onClick={() => handleTopicClick('EVM')}>Explain EVM</button>
+            <button className="topic-chip glass-card" onClick={() => handleTopicClick('NOTA')}>What is NOTA?</button>
+            <button className="topic-chip glass-card" onClick={() => handleTopicClick('Voter Registration')}>Registration Help</button>
           </div>
           <div className="input-wrapper glass-card">
             <Command size={18} className="input-icon" />
@@ -99,8 +136,9 @@ const Assistant: React.FC = () => {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+              disabled={isTyping}
             />
-            <button className="send-btn" onClick={handleSend}>
+            <button className="send-btn" onClick={() => handleSend()} disabled={isTyping || !input.trim()}>
               <Send size={18} />
             </button>
           </div>
@@ -136,6 +174,38 @@ const Assistant: React.FC = () => {
           align-items: center;
           gap: 1rem;
           font-weight: 600;
+        }
+
+        .status-dot.pulse {
+          animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+          0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+          70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .typing-indicator {
+          display: flex;
+          gap: 4px;
+          padding: 0.8rem 1.2rem !important;
+        }
+
+        .typing-indicator span {
+          width: 8px;
+          height: 8px;
+          background: var(--text-dim);
+          border-radius: 50%;
+          animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+          0%, 80%, 100% { transform: scale(0); }
+          40% { transform: scale(1.0); }
         }
 
         .status-dot {
@@ -249,23 +319,10 @@ const Assistant: React.FC = () => {
           outline: none;
         }
 
-        .send-btn {
-          background: var(--primary);
-          border: none;
-          width: 40px;
-          height: 40px;
-          border-radius: 12px;
-          color: white;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: transform 0.2s ease;
-        }
-
-        .send-btn:hover {
-          transform: scale(1.05);
-          background: var(--secondary);
+        .send-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+          transform: none;
         }
 
         .input-icon {
