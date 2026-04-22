@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Send, Bot, User, Sparkles, Command } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
 import { explainConcept } from '../services/gemini';
 
 interface Message {
@@ -102,7 +103,13 @@ const Assistant: React.FC = () => {
                 {msg.sender === 'ai' ? <Bot size={18} /> : <User size={18} />}
               </div>
               <div className="message-bubble glass-card">
-                <p>{msg.text}</p>
+                {msg.sender === 'ai' ? (
+                  <div className="markdown-content">
+                    <ReactMarkdown>{msg.text}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <p>{msg.text}</p>
+                )}
                 <span className="timestamp">
                   {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
@@ -270,6 +277,23 @@ const Assistant: React.FC = () => {
 
         .message-bubble p {
           line-height: 1.5;
+        }
+
+        .markdown-content p {
+          margin-bottom: 0.75rem;
+        }
+
+        .markdown-content p:last-child {
+          margin-bottom: 0;
+        }
+
+        .markdown-content ul, .markdown-content ol {
+          margin-left: 1.25rem;
+          margin-bottom: 0.75rem;
+        }
+
+        .markdown-content li {
+          margin-bottom: 0.25rem;
         }
 
         .timestamp {

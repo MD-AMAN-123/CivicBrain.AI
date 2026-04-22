@@ -1,3 +1,5 @@
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
 export type LearningLevel = 'beginner' | 'intermediate' | 'advanced';
 
 interface ExplainParams {
@@ -12,26 +14,40 @@ interface QuizQuestion {
   answer: string;
 }
 
+// Access API Key from environment variables
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
+const genAI = new GoogleGenerativeAI(API_KEY);
+
 /**
- * Service to interact with Gemini AI (via Cloud Functions in production)
+ * Service to interact with Gemini AI
  */
-export const explainConcept = async (_params: ExplainParams): Promise<string> => {
-  const { level } = _params;
+export const explainConcept = async (params: ExplainParams): Promise<string> => {
+  const { topic, level } = params;
 
-  const mockResponses: Record<LearningLevel, string> = {
-    beginner: `Imagine an election is like choosing a class leader. A 'Voter' is anyone who gets to pick. 'Registration' is just putting your name on the list so everyone knows you're part of the class!`,
-    intermediate: `Election systems are complex frameworks that translate individual preferences into collective decisions. Voter registration ensures the integrity of the 'one person, one vote' principle by maintaining accurate electoral rolls.`,
-    advanced: `The electoral architecture involves multi-stage verification protocols. Voter registration serves as a cryptographic entry point, often utilizing biometric or federated identity systems to mitigate Sybil attacks and ensure distributive justice in representative outcomes.`
-  };
+  if (!API_KEY) {
+    return "AI Assistant is currently in demo mode. Please configure VITE_GEMINI_API_KEY to enable live election insights.";
+  }
 
-  return new Promise<string>((resolve) => {
-    setTimeout(() => {
-      resolve(mockResponses[level] || mockResponses.beginner);
-    }, 1500);
-  });
+  try {
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-1.5-flash",
+      systemInstruction: `You are CivicBrain AI, a specialized election assistant. 
+      Your goal is to provide accurate, unbiased, and easy-to-understand information about elections, voting processes, and democratic systems.
+      Keep your answers concise and tailored to the following audience level: ${level}.
+      If the user asks something completely unrelated to elections or civic duties, politely redirect them to election-related topics.`
+    });
+
+    const result = await model.generateContent(topic);
+    const response = await result.response;
+    return response.text();
+  } catch (error) {
+    console.error("Gemini AI Error:", error);
+    return "I'm having trouble connecting to my brain right now. Let's try again in a moment!";
+  }
 };
 
 export const generateQuiz = async (_progress: Record<string, unknown>): Promise<QuizQuestion[]> => {
+  // For a real app, this would also call Gemini to generate dynamic questions
   return [
     {
       question: "What is the first step in the election journey?",
