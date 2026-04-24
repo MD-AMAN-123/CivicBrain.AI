@@ -67,31 +67,31 @@ const Timeline: React.FC = () => {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: index * 0.1 }}
+            style={{ '--step-color': step.color } as React.CSSProperties}
           >
             <div className="timeline-dot-wrapper">
-              <div className="timeline-dot" style={{ backgroundColor: step.color }}>
+              <div className="timeline-dot">
                 {step.icon}
               </div>
               {index !== timelineSteps.length - 1 && <div className="timeline-line"></div>}
             </div>
             
             <div className="timeline-content glass-card">
-              <div className="content-badge" style={{ backgroundColor: `${step.color}22`, color: step.color }}>
+              <div className="content-badge">
                 Step {index + 1}
               </div>
               <h3>{step.title}</h3>
               <p>{step.description}</p>
               <ul className="step-details">
                 {step.details.map((detail, idx) => (
-                  <li key={idx}>
-                    <div className="detail-bullet" style={{ backgroundColor: step.color }}></div>
+                   <li key={idx}>
+                    <div className="detail-bullet"></div>
                     {detail}
                   </li>
                 ))}
               </ul>
               <button 
                 className="learn-more-btn" 
-                style={{ borderColor: `${step.color}44`, color: step.color }}
                 onClick={() => navigate('/assistant', { state: { prompt: `Deep dive into ${step.title}: ${step.description}` } })}
               >
                 Deep Dive Explainer
@@ -100,149 +100,6 @@ const Timeline: React.FC = () => {
           </motion.div>
         ))}
       </div>
-
-      <style dangerouslySetInnerHTML={{ __html: `
-        .timeline-view {
-          display: flex;
-          flex-direction: column;
-          gap: 3rem;
-          padding-bottom: 5rem;
-        }
-
-        .timeline-header {
-          text-align: center;
-        }
-
-        .view-subtitle {
-          color: var(--text-dim);
-          margin-top: 0.5rem;
-        }
-
-        .timeline-container {
-          position: relative;
-          max-width: 900px;
-          margin: 0 auto;
-          display: flex;
-          flex-direction: column;
-          gap: 2rem;
-        }
-
-        .timeline-item {
-          display: flex;
-          gap: 3rem;
-          align-items: flex-start;
-        }
-
-        .timeline-dot-wrapper {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          padding-top: 1rem;
-        }
-
-        .timeline-dot {
-          width: 50px;
-          height: 50px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          z-index: 2;
-          box-shadow: 0 0 20px rgba(0,0,0,0.3);
-        }
-
-        .timeline-line {
-          width: 2px;
-          flex: 1;
-          background: var(--glass-border);
-          margin-top: 0.5rem;
-          min-height: 100px;
-        }
-
-        .timeline-content {
-          flex: 1;
-          padding: 2rem;
-          display: flex;
-          flex-direction: column;
-          gap: 1.25rem;
-        }
-
-        .content-badge {
-          align-self: flex-start;
-          padding: 0.25rem 0.75rem;
-          border-radius: 2rem;
-          font-size: 0.8rem;
-          font-weight: 600;
-        }
-
-        .timeline-content h3 {
-          font-size: 1.75rem;
-          font-weight: 700;
-        }
-
-        .timeline-content p {
-          color: var(--text-dim);
-          line-height: 1.6;
-        }
-
-        .step-details {
-          list-style: none;
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 0.75rem;
-        }
-
-        .step-details li {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          font-size: 0.9rem;
-          color: #e2e8f0;
-        }
-
-        .detail-bullet {
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-        }
-
-        .learn-more-btn {
-          margin-top: 0.5rem;
-          padding: 0.6rem 1.2rem;
-          background: transparent;
-          border: 1px solid;
-          border-radius: 0.5rem;
-          cursor: pointer;
-          font-weight: 600;
-          transition: all 0.2s ease;
-          align-self: flex-start;
-        }
-
-        .learn-more-btn:hover {
-          background: rgba(255, 255, 255, 0.05);
-          transform: translateX(5px);
-        }
-
-        @media (max-width: 768px) {
-          .timeline-item {
-            gap: 1.5rem;
-          }
-          .timeline-dot {
-            width: 40px;
-            height: 40px;
-          }
-          .timeline-content {
-            padding: 1.5rem;
-          }
-          .timeline-content h3 {
-            font-size: 1.25rem;
-          }
-          .step-details {
-            grid-template-columns: 1fr;
-          }
-        }
-      ` }} />
     </div>
   );
 };

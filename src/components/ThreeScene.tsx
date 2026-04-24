@@ -32,7 +32,7 @@ const FloatingSphere = () => {
 
 const ThreeScene: React.FC = () => {
   return (
-    <div style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, zIndex: -1 }}>
+    <div className="three-container">
       <Canvas>
         <PerspectiveCamera makeDefault position={[0, 0, 5]} />
         <ambientLight intensity={0.5} />

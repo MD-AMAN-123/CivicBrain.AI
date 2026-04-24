@@ -85,7 +85,7 @@ const App: React.FC = () => {
         </header>
 
         <div className="content-viewport animate-fade-in">
-          <Suspense fallback={<div className="flex-center" style={{ height: '60vh', color: 'var(--text-dim)' }}>Loading...</div>}>
+          <Suspense fallback={<div className="flex-center loading-screen">Loading...</div>}>
             <Routes>
               <Route path="/" element={<HomeView />} />
               <Route path="/dashboard" element={<Dashboard />} />
@@ -118,8 +118,8 @@ const App: React.FC = () => {
       </div>
 
       {/* Background Blobs */}
-      <div className="blob" style={{ top: '-100px', right: '-100px' }}></div>
-      <div className="blob" style={{ bottom: '100px', left: '-200px', opacity: 0.3 }}></div>
+      <div className="blob blob-1"></div>
+      <div className="blob blob-2"></div>
     </div>
 
   );

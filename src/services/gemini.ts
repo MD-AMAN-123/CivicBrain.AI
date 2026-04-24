@@ -46,7 +46,7 @@ export const explainConcept = async (params: ExplainParams): Promise<string> => 
   }
 };
 
-export const generateQuiz = async (_progress: Record<string, unknown>): Promise<QuizQuestion[]> => {
+export const generateQuiz = async (): Promise<QuizQuestion[]> => {
   // For a real app, this would also call Gemini to generate dynamic questions
   return [
     {
