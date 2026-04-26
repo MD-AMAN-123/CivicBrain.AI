@@ -7,7 +7,7 @@ const FloatingSphere = () => {
   const mesh = useRef<THREE.Mesh>(null!);
   
   useFrame((state) => {
-    const time = state.clock.getElapsedTime();
+    const time = state.clock.elapsedTime;
     mesh.current.rotation.x = time * 0.2;
     mesh.current.rotation.y = time * 0.3;
   });
