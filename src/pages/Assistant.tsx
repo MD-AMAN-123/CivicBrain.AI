@@ -46,24 +46,33 @@ const Assistant: React.FC = () => {
     setInput('');
     setIsTyping(true);
 
-    // Fetch response from AI Service
+    const aiMsgId = Date.now() + Math.random();
+    const initialAiMsg: Message = {
+      id: aiMsgId,
+      text: "",
+      sender: 'ai',
+      timestamp: new Date()
+    };
+    
+    setMessages(prev => [...prev, initialAiMsg]);
+
+    // Fetch streaming response from AI Service
     try {
-      const response = await explainConcept({ topic: textToSend, level: 'beginner' });
-      const aiMsg: Message = {
-        id: Date.now() + Math.random(),
-        text: response,
-        sender: 'ai',
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, aiMsg]);
-    } catch {
-      const errorMsg: Message = {
-        id: Date.now() + Math.random(),
-        text: "I'm having some trouble right now. Please try again later.",
-        sender: 'ai',
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, errorMsg]);
+      let fullText = "";
+      await explainConcept({ 
+        topic: textToSend, 
+        level: 'beginner',
+        onStream: (chunk) => {
+          fullText += chunk;
+          setMessages(prev => prev.map(msg => 
+            msg.id === aiMsgId ? { ...msg, text: fullText } : msg
+          ));
+        }
+      });
+    } catch (error) {
+      setMessages(prev => prev.map(msg => 
+        msg.id === aiMsgId ? { ...msg, text: "I'm having trouble connecting to my brain right now. Please try again in a moment!" } : msg
+      ));
     } finally {
       setIsTyping(false);
     }
@@ -109,7 +118,13 @@ const Assistant: React.FC = () => {
               <div className="message-bubble glass-card">
                 {msg.sender === 'ai' ? (
                   <div className="markdown-content">
-                    <ReactMarkdown>{msg.text}</ReactMarkdown>
+                    {msg.text ? (
+                      <ReactMarkdown>{msg.text}</ReactMarkdown>
+                    ) : (
+                      <div className="typing-dots">
+                        <span></span><span></span><span></span>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <p>{msg.text}</p>
@@ -120,16 +135,6 @@ const Assistant: React.FC = () => {
               </div>
             </div>
           ))}
-          {isTyping && (
-            <div className="message-wrapper ai">
-              <div className="message-avatar glass-card">
-                <Bot size={18} />
-              </div>
-              <div className="message-bubble glass-card typing-indicator">
-                <span></span><span></span><span></span>
-              </div>
-            </div>
-          )}
           <div ref={messagesEndRef} />
         </div>
 
