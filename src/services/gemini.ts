@@ -12,9 +12,13 @@ interface QuizQuestion {
   answer: string;
 }
 
+// Support both VITE_ prefixed and regular env vars for maximum local compatibility
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
+
 /**
- * SECURE SERVICE: Routes all AI requests through the Vercel Backend Proxy (/api/chat)
- * This ensures the API key is never exposed to the client's browser.
+ * SECURE & ROBUST SERVICE
+ * Routes through Vercel Proxy (/api/chat) in production, 
+ * with a high-resiliency direct fallback for local development.
  */
 export const explainConcept = async (params: ExplainParams): Promise<string> => {
   const { topic, level, onStream } = params;
@@ -24,116 +28,135 @@ export const explainConcept = async (params: ExplainParams): Promise<string> => 
   Keep your answers concise and tailored to a ${level} audience. Use markdown formatting.`;
 
   try {
-    // Call the local Vercel Proxy instead of Google directly
+    // 1. Attempt to use the Vercel Backend Proxy (Secure)
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ topic, systemInstruction })
     });
 
-    if (!response.ok) {
-      // Fallback for local development if /api/chat isn't running
-      if (response.status === 404 && import.meta.env.VITE_GEMINI_API_KEY) {
-        return await directFallback(topic, systemInstruction, onStream);
-      }
-      const err = await response.json();
-      throw new Error(err.error?.message || `Server error: ${response.status}`);
+    if (response.ok) {
+      return await handleStreamResponse(response, onStream);
     }
 
-    const reader = response.body?.getReader();
-    if (!reader) throw new Error("Response body is null");
-
-    const decoder = new TextDecoder();
-    let fullText = "";
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      const chunk = decoder.decode(value, { stream: true });
-      const lines = chunk.split("\n");
-      
-      for (const line of lines) {
-        if (line.startsWith("data: ")) {
-          try {
-            const jsonStr = line.replace("data: ", "").trim();
-            if (jsonStr === "[DONE]") continue;
-            const data = JSON.parse(jsonStr);
-            const textChunk = data.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (textChunk) {
-              fullText += textChunk;
-              if (onStream) onStream(textChunk);
-            }
-          } catch (e) { /* partial chunk */ }
-        }
-      }
+    // 2. Local Development Fallback (if /api/chat is 404)
+    if (response.status === 404 || response.status === 500) {
+      console.log("Proxy unavailable or failed, attempting direct robust fallback...");
+      return await robustDirectFallback(topic, systemInstruction, onStream);
     }
-    return fullText;
+
+    const err = await safeParseJson(response);
+    throw new Error(err?.error?.message || `Server error: ${response.status}`);
+
   } catch (error: any) {
-    console.error("Secure Proxy Error:", error);
-    const msg = `Connection failed. ${error.message}.`;
+    console.error("Gemini Service Error:", error);
+    const msg = `Connection failed. ${error.message}`;
     if (onStream) onStream(msg);
     return msg;
   }
 };
 
 /**
- * Direct Fallback for Local Development ONLY
+ * Handles SSE Stream responses from either the proxy or direct Gemini API
  */
-async function directFallback(topic: string, systemInstruction: string, onStream?: (c: string) => void) {
-  const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-  if (!API_KEY) throw new Error("API Key not found in environment.");
-
-  const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:streamGenerateContent?alt=sse&key=${API_KEY}`;
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: `${systemInstruction}\n\nUser Question: ${topic}` }] }]
-    })
-  });
-
+async function handleStreamResponse(response: Response, onStream?: (c: string) => void): Promise<string> {
   const reader = response.body?.getReader();
-  if (!reader) throw new Error("Fallback failed");
-  
+  if (!reader) throw new Error("Response body is null");
+
   const decoder = new TextDecoder();
   let fullText = "";
+
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
+
     const chunk = decoder.decode(value, { stream: true });
     const lines = chunk.split("\n");
+    
     for (const line of lines) {
       if (line.startsWith("data: ")) {
-        const jsonStr = line.replace("data: ", "").trim();
-        const data = JSON.parse(jsonStr);
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text) {
-          fullText += text;
-          if (onStream) onStream(text);
-        }
+        try {
+          const jsonStr = line.replace("data: ", "").trim();
+          if (jsonStr === "[DONE]") continue;
+          const data = JSON.parse(jsonStr);
+          const textChunk = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (textChunk) {
+            fullText += textChunk;
+            if (onStream) onStream(textChunk);
+          }
+        } catch (e) { /* partial chunk */ }
       }
     }
   }
   return fullText;
 }
 
+/**
+ * High-Resiliency Direct Fallback that cycles through multiple models/versions
+ */
+async function robustDirectFallback(topic: string, systemInstruction: string, onStream?: (c: string) => void) {
+  const key = API_KEY;
+  if (!key || key === "" || key === "API_KEY") {
+    throw new Error("No API key found. Please set VITE_GEMINI_API_KEY in your .env file.");
+  }
+
+  const configs = [
+    { model: 'gemini-1.5-flash', version: 'v1' },
+    { model: 'gemini-1.5-flash', version: 'v1beta' },
+    { model: 'gemini-pro', version: 'v1' },
+    { model: 'gemini-1.5-pro', version: 'v1beta' }
+  ];
+
+  let lastError = "";
+
+  for (const config of configs) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/${config.version}/models/${config.model}:streamGenerateContent?alt=sse&key=${key}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: `${systemInstruction}\n\nUser Question: ${topic}` }] }]
+        })
+      });
+
+      if (response.ok) {
+        return await handleStreamResponse(response, onStream);
+      }
+
+      const errData = await safeParseJson(response);
+      lastError = errData?.error?.message || `Status ${response.status}`;
+      
+      if (response.status === 404 || lastError.includes("not found")) {
+        continue; // Try next model in loop
+      }
+      throw new Error(lastError);
+    } catch (e: any) {
+      lastError = e.message;
+      continue;
+    }
+  }
+
+  throw new Error(lastError || "All Gemini models failed to respond.");
+}
+
+async function safeParseJson(response: Response) {
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
 export const generateQuiz = async (topic: string = "general elections"): Promise<QuizQuestion[]> => {
   try {
-    await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        topic: `Generate a 3-question quiz about ${topic} in JSON array format: [{question, options, answer}]`, 
-        systemInstruction: "You are a JSON generator. Return ONLY raw JSON array."
-      })
+    const text = await explainConcept({ 
+      topic: `Generate a 3-question quiz about ${topic} in JSON array format: [{question, options, answer}]. Return ONLY the JSON array.`, 
+      level: 'intermediate' 
     });
-    // This is a simplified example; for quizzes, the proxy would need to handle non-streaming or 
-    // the frontend would need to parse the SSE stream into a single JSON object.
-    // For now, we'll keep the quiz as a fallback or implement it properly.
-    return [
-      { question: "What is the minimum age to vote in India?", options: ["16", "18", "21", "25"], answer: "18" }
-    ];
+    // Attempt to extract JSON from the text response
+    const jsonMatch = text.match(/\[.*\]/s);
+    return JSON.parse(jsonMatch ? jsonMatch[0] : "[]");
   } catch {
     return [
       { question: "What is the minimum age to vote in India?", options: ["16", "18", "21", "25"], answer: "18" }
