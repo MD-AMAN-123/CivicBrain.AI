@@ -19,7 +19,7 @@ export const explainConcept = async (params: ExplainParams): Promise<string> => 
   Keep your answers concise and tailored to a ${level} audience. Use markdown formatting.`;
 
   try {
-    // 1. Try Vercel Proxy
+    // 1. Try Vercel Proxy (Preferred)
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -29,8 +29,11 @@ export const explainConcept = async (params: ExplainParams): Promise<string> => 
     if (response.ok) return await handleStreamResponse(response, onStream);
 
     // 2. Direct Fallback
-    const key = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY;
-    if (key) return await robustDirectFallback(topic, systemInstruction, key, onStream);
+    const rawKey = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY;
+    if (rawKey) {
+      const cleanKey = rawKey.trim(); // TRIMMING IS CRITICAL
+      return await robustDirectFallback(topic, systemInstruction, cleanKey, onStream);
+    }
 
     const err = await safeParseJson(response);
     throw new Error(err?.error?.message || `Server status: ${response.status}`);
@@ -71,37 +74,46 @@ async function handleStreamResponse(response: Response, onStream?: (c: string) =
 }
 
 async function robustDirectFallback(topic: string, systemInstruction: string, key: string, onStream?: (c: string) => void) {
+  // Ultra-comprehensive list of models
   const configs = [
     { m: 'gemini-1.5-flash', v: 'v1beta' },
+    { m: 'gemini-1.5-flash-latest', v: 'v1beta' },
     { m: 'gemini-1.5-flash', v: 'v1' },
     { m: 'gemini-pro', v: 'v1' },
-    { m: 'gemini-1.5-pro', v: 'v1beta' },
-    { m: 'gemini-1.0-pro', v: 'v1' }
+    { m: 'gemini-1.5-pro', v: 'v1beta' }
   ];
 
   let lastError = "";
   for (const conf of configs) {
     try {
+      // Use standard streaming URL
       const url = `https://generativelanguage.googleapis.com/${conf.v}/models/${conf.m}:streamGenerateContent?alt=sse&key=${key}`;
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: `${systemInstruction}\n\nUser Question: ${topic}` }] }] })
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: `${systemInstruction}\n\nUser Question: ${topic}` }] }]
+        })
       });
 
       if (response.ok) return await handleStreamResponse(response, onStream);
+      
       const errData = await safeParseJson(response);
       lastError = errData?.error?.message || `Status ${response.status}`;
+      
+      // If the error message suggests the model is not found, try the next one
       if (response.status === 404 || lastError.toLowerCase().includes("not found")) continue;
-      if (response.status === 401 || response.status === 403) throw new Error(`INVALID API KEY: ${lastError}`);
+      
+      // If it's a 400 with a specific "not supported" message, try next
+      if (response.status === 400 && lastError.toLowerCase().includes("supported")) continue;
+
       throw new Error(lastError);
     } catch (e: any) {
       lastError = e.message;
-      if (lastError.includes("INVALID API KEY")) throw e;
       continue;
     }
   }
-  throw new Error(`All models failed. Last error: ${lastError}`);
+  throw new Error(`All models failed. Last error from Google: ${lastError}`);
 }
 
 async function safeParseJson(res: Response) { try { return await res.json(); } catch { return null; } }
