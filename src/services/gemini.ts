@@ -12,9 +12,6 @@ interface QuizQuestion {
   answer: string;
 }
 
-// Support both VITE_ prefixed and regular env vars for maximum local compatibility
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
-
 /**
  * SECURE & ROBUST SERVICE
  * Routes through Vercel Proxy (/api/chat) in production, 
@@ -29,6 +26,7 @@ export const explainConcept = async (params: ExplainParams): Promise<string> => 
 
   try {
     // 1. Attempt to use the Vercel Backend Proxy (Secure)
+    // We try this first. If it works, we don't need a client-side key.
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -39,14 +37,18 @@ export const explainConcept = async (params: ExplainParams): Promise<string> => 
       return await handleStreamResponse(response, onStream);
     }
 
-    // 2. Local Development Fallback (if /api/chat is 404)
-    if (response.status === 404 || response.status === 500) {
-      console.log("Proxy unavailable or failed, attempting direct robust fallback...");
-      return await robustDirectFallback(topic, systemInstruction, onStream);
+    // 2. Local Development Fallback (if /api/chat is 404 or fails)
+    // Read the key INSIDE the function to ensure we get the latest value from Vite/Vercel
+    const clientKey = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY;
+    
+    if (clientKey) {
+      console.log("Proxy failed, using client-side fallback key...");
+      return await robustDirectFallback(topic, systemInstruction, clientKey, onStream);
     }
 
     const err = await safeParseJson(response);
-    throw new Error(err?.error?.message || `Server error: ${response.status}`);
+    const serverErrMsg = err?.error?.message || `Server status: ${response.status}`;
+    throw new Error(`API key missing. Please add VITE_GEMINI_API_KEY to your .env file or Vercel settings. (Details: ${serverErrMsg})`);
 
   } catch (error: any) {
     console.error("Gemini Service Error:", error);
@@ -56,23 +58,16 @@ export const explainConcept = async (params: ExplainParams): Promise<string> => 
   }
 };
 
-/**
- * Handles SSE Stream responses from either the proxy or direct Gemini API
- */
 async function handleStreamResponse(response: Response, onStream?: (c: string) => void): Promise<string> {
   const reader = response.body?.getReader();
   if (!reader) throw new Error("Response body is null");
-
   const decoder = new TextDecoder();
   let fullText = "";
-
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
-
     const chunk = decoder.decode(value, { stream: true });
     const lines = chunk.split("\n");
-    
     for (const line of lines) {
       if (line.startsWith("data: ")) {
         try {
@@ -91,15 +86,7 @@ async function handleStreamResponse(response: Response, onStream?: (c: string) =
   return fullText;
 }
 
-/**
- * High-Resiliency Direct Fallback that cycles through multiple models/versions
- */
-async function robustDirectFallback(topic: string, systemInstruction: string, onStream?: (c: string) => void) {
-  const key = API_KEY;
-  if (!key || key === "" || key === "API_KEY") {
-    throw new Error("No API key found. Please set VITE_GEMINI_API_KEY in your .env file.");
-  }
-
+async function robustDirectFallback(topic: string, systemInstruction: string, key: string, onStream?: (c: string) => void) {
   const configs = [
     { model: 'gemini-1.5-flash', version: 'v1' },
     { model: 'gemini-1.5-flash', version: 'v1beta' },
@@ -108,7 +95,6 @@ async function robustDirectFallback(topic: string, systemInstruction: string, on
   ];
 
   let lastError = "";
-
   for (const config of configs) {
     try {
       const url = `https://generativelanguage.googleapis.com/${config.version}/models/${config.model}:streamGenerateContent?alt=sse&key=${key}`;
@@ -123,29 +109,20 @@ async function robustDirectFallback(topic: string, systemInstruction: string, on
       if (response.ok) {
         return await handleStreamResponse(response, onStream);
       }
-
       const errData = await safeParseJson(response);
       lastError = errData?.error?.message || `Status ${response.status}`;
-      
-      if (response.status === 404 || lastError.includes("not found")) {
-        continue; // Try next model in loop
-      }
+      if (response.status === 404 || lastError.includes("not found")) continue;
       throw new Error(lastError);
     } catch (e: any) {
       lastError = e.message;
       continue;
     }
   }
-
-  throw new Error(lastError || "All Gemini models failed to respond.");
+  throw new Error(lastError || "All Gemini models failed.");
 }
 
 async function safeParseJson(response: Response) {
-  try {
-    return await response.json();
-  } catch {
-    return null;
-  }
+  try { return await response.json(); } catch { return null; }
 }
 
 export const generateQuiz = async (topic: string = "general elections"): Promise<QuizQuestion[]> => {
@@ -154,12 +131,9 @@ export const generateQuiz = async (topic: string = "general elections"): Promise
       topic: `Generate a 3-question quiz about ${topic} in JSON array format: [{question, options, answer}]. Return ONLY the JSON array.`, 
       level: 'intermediate' 
     });
-    // Attempt to extract JSON from the text response
     const jsonMatch = text.match(/\[.*\]/s);
     return JSON.parse(jsonMatch ? jsonMatch[0] : "[]");
   } catch {
-    return [
-      { question: "What is the minimum age to vote in India?", options: ["16", "18", "21", "25"], answer: "18" }
-    ];
+    return [{ question: "What is the minimum age to vote in India?", options: ["16", "18", "21", "25"], answer: "18" }];
   }
 };

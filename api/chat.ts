@@ -9,10 +9,14 @@ export default async function handler(req: Request) {
 
   try {
     const { topic, systemInstruction } = await req.json();
-    const apiKey = process.env.GEMINI_API_KEY;
+    
+    // Support both the secure server-side name and the VITE_ prefixed name
+    const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
 
     if (!apiKey) {
-      return new Response(JSON.stringify({ error: { message: 'API Key not configured on server' } }), {
+      return new Response(JSON.stringify({ 
+        error: { message: 'API Key not configured on Vercel. Please add GEMINI_API_KEY to your Vercel Environment Variables.' } 
+      }), { 
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       });
@@ -31,7 +35,7 @@ export default async function handler(req: Request) {
     for (const config of modelConfigs) {
       try {
         const url = `https://generativelanguage.googleapis.com/${config.version}/models/${config.model}:streamGenerateContent?alt=sse&key=${apiKey}`;
-
+        
         const response = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -41,7 +45,6 @@ export default async function handler(req: Request) {
         });
 
         if (response.ok) {
-          // Success! Return this stream to the client
           return new Response(response.body, {
             headers: {
               'Content-Type': 'text/event-stream',
@@ -53,15 +56,12 @@ export default async function handler(req: Request) {
 
         const errData = await response.json();
         lastError = errData.error?.message || `Status ${response.status}`;
-        console.warn(`Model ${config.model} (${config.version}) failed: ${lastError}`);
-
-        // If it's a 404 (not found), try the next config
+        
         if (response.status === 404 || lastError.includes("not found")) {
           continue;
         }
-
-        // For other errors (like 401/403), stop and report
-        return new Response(JSON.stringify(errData), {
+        
+        return new Response(JSON.stringify(errData), { 
           status: response.status,
           headers: { 'Content-Type': 'application/json' }
         });
@@ -72,13 +72,13 @@ export default async function handler(req: Request) {
       }
     }
 
-    return new Response(JSON.stringify({ error: { message: lastError || 'All models failed' } }), {
+    return new Response(JSON.stringify({ error: { message: lastError || 'All models failed' } }), { 
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
 
   } catch (error: any) {
-    return new Response(JSON.stringify({ error: { message: error.message } }), {
+    return new Response(JSON.stringify({ error: { message: error.message } }), { 
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
