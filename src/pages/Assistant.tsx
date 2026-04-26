@@ -96,7 +96,7 @@ const Assistant: React.FC = () => {
           </div>
           <div className="engine-badge">
             <Sparkles size={14} />
-            <span>Gemini 3 Flash</span>
+            <span>Gemini 1.5 Flash</span>
           </div>
         </header>
 

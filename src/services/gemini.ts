@@ -29,14 +29,17 @@ export const explainConcept = async (params: ExplainParams): Promise<string> => 
   }
 
   try {
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-3-flash",
-      systemInstruction: `You are CivicBrain AI, a specialized election assistant. 
-      Your goal is to provide accurate, unbiased, and easy-to-understand information about elections, voting processes, and democratic systems.
-      Keep your answers concise, engaging, and tailored to the following audience level: ${level}.
-      Use markdown formatting (bolding, lists) to make information readable.
-      If the user asks something completely unrelated to elections or civic duties, politely redirect them to election-related topics.`
-    });
+    const model = genAI.getGenerativeModel(
+      { 
+        model: "gemini-1.5-flash",
+        systemInstruction: `You are CivicBrain AI, a specialized election assistant. 
+        Your goal is to provide accurate, unbiased, and easy-to-understand information about elections, voting processes, and democratic systems.
+        Keep your answers concise, engaging, and tailored to the following audience level: ${level}.
+        Use markdown formatting (bolding, lists) to make information readable.
+        If the user asks something completely unrelated to elections or civic duties, politely redirect them to election-related topics.`
+      },
+      { apiVersion: "v1" }
+    );
 
     const result = await model.generateContent(topic);
     const response = await result.response;
@@ -59,10 +62,13 @@ export const generateQuiz = async (topic: string = "general elections"): Promise
   }
 
   try {
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-3-flash",
-      generationConfig: { responseMimeType: "application/json" }
-    });
+    const model = genAI.getGenerativeModel(
+      { 
+        model: "gemini-1.5-flash",
+        generationConfig: { responseMimeType: "application/json" }
+      },
+      { apiVersion: "v1" }
+    );
 
     const prompt = `Generate a 3-question multiple choice quiz about ${topic}. 
     Each question should have exactly 4 options and one correct answer.
