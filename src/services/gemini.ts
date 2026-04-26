@@ -30,7 +30,7 @@ export const explainConcept = async (params: ExplainParams): Promise<string> => 
 
   try {
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash-latest",
+      model: "gemini-3-flash",
       systemInstruction: `You are CivicBrain AI, a specialized election assistant. 
       Your goal is to provide accurate, unbiased, and easy-to-understand information about elections, voting processes, and democratic systems.
       Keep your answers concise, engaging, and tailored to the following audience level: ${level}.
@@ -60,7 +60,7 @@ export const generateQuiz = async (topic: string = "general elections"): Promise
 
   try {
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash-latest",
+      model: "gemini-3-flash",
       generationConfig: { responseMimeType: "application/json" }
     });
 
