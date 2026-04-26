@@ -3,39 +3,30 @@ export const config = {
 };
 
 export default async function handler(req: Request) {
-  if (req.method !== 'POST') {
-    return new Response('Method Not Allowed', { status: 405 });
-  }
+  if (req.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
 
   try {
     const { topic, systemInstruction } = await req.json();
-    
-    // Support both the secure server-side name and the VITE_ prefixed name
     const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
 
     if (!apiKey) {
-      return new Response(JSON.stringify({ 
-        error: { message: 'API Key not configured on Vercel. Please add GEMINI_API_KEY to your Vercel Environment Variables.' } 
-      }), { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return new Response(JSON.stringify({ error: { message: 'API Key missing. Please set it in Vercel settings.' } }), { status: 500 });
     }
 
-    // Try multiple models and versions until one works
-    const modelConfigs = [
-      { model: 'gemini-1.5-flash', version: 'v1' },
-      { model: 'gemini-1.5-flash', version: 'v1beta' },
-      { model: 'gemini-pro', version: 'v1' },
-      { model: 'gemini-1.5-pro', version: 'v1beta' }
+    // Comprehensive list of models and versions to try
+    const configs = [
+      { m: 'gemini-1.5-flash', v: 'v1beta' },
+      { m: 'gemini-1.5-flash', v: 'v1' },
+      { m: 'gemini-pro', v: 'v1' },
+      { m: 'gemini-1.5-pro', v: 'v1beta' },
+      { m: 'gemini-1.0-pro', v: 'v1' }
     ];
 
-    let lastError = null;
+    let lastError = "";
 
-    for (const config of modelConfigs) {
+    for (const conf of configs) {
       try {
-        const url = `https://generativelanguage.googleapis.com/${config.version}/models/${config.model}:streamGenerateContent?alt=sse&key=${apiKey}`;
-        
+        const url = `https://generativelanguage.googleapis.com/${conf.v}/models/${conf.m}:streamGenerateContent?alt=sse&key=${apiKey}`;
         const response = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -46,25 +37,20 @@ export default async function handler(req: Request) {
 
         if (response.ok) {
           return new Response(response.body, {
-            headers: {
-              'Content-Type': 'text/event-stream',
-              'Cache-Control': 'no-cache',
-              'Connection': 'keep-alive',
-            },
+            headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' },
           });
         }
 
-        const errData = await response.json();
-        lastError = errData.error?.message || `Status ${response.status}`;
-        
-        if (response.status === 404 || lastError.includes("not found")) {
-          continue;
+        const err = await response.json();
+        lastError = err.error?.message || `Status ${response.status}`;
+
+        // If it's a 404 (not found), try the next config
+        if (response.status === 404 || lastError.toLowerCase().includes("not found")) continue;
+
+        // If it's a 401/403, the key is likely invalid or leaked
+        if (response.status === 401 || response.status === 403) {
+          return new Response(JSON.stringify({ error: { message: `INVALID API KEY: ${lastError}` } }), { status: response.status });
         }
-        
-        return new Response(JSON.stringify(errData), { 
-          status: response.status,
-          headers: { 'Content-Type': 'application/json' }
-        });
 
       } catch (e: any) {
         lastError = e.message;
@@ -72,15 +58,8 @@ export default async function handler(req: Request) {
       }
     }
 
-    return new Response(JSON.stringify({ error: { message: lastError || 'All models failed' } }), { 
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
-
+    return new Response(JSON.stringify({ error: { message: `All models failed. Last error: ${lastError}` } }), { status: 500 });
   } catch (error: any) {
-    return new Response(JSON.stringify({ error: { message: error.message } }), { 
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return new Response(JSON.stringify({ error: { message: error.message } }), { status: 500 });
   }
 }
