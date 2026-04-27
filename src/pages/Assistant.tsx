@@ -33,7 +33,21 @@ const Assistant: React.FC = () => {
   const [isInitializing, setIsInitializing] = useState(true);
   const [progress, setProgress] = useState(0);
   const [initText, setInitText] = useState("Initializing Engine...");
-  const [isOffline, setIsOffline] = useState(false);
+  const [isEngineReady, setIsEngineReady] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const handledPromptRef = useRef<string | null>(null);
@@ -55,13 +69,13 @@ const Assistant: React.FC = () => {
         
         if (active) {
           setEngine(mlcEngine);
-          setIsOffline(true); // Using local model
+          setIsEngineReady(true);
           setIsInitializing(false);
         }
       } catch (error) {
         console.error("Failed to initialize WebLLM:", error);
         if (active) {
-          setIsOffline(false); // Fallback to online API
+          setIsEngineReady(false);
           setIsInitializing(false);
         }
       }
@@ -104,7 +118,7 @@ const Assistant: React.FC = () => {
     setMessages(prev => [...prev, initialAiMsg]);
 
     try {
-      if (engine && isOffline) {
+      if (engine && isEngineReady) {
         // Use local model
         const history = messages.map(m => ({
           role: m.sender === 'user' ? 'user' : 'assistant' as const,
@@ -153,7 +167,7 @@ const Assistant: React.FC = () => {
     } finally {
       setIsTyping(false);
     }
-  }, [input, isTyping, isInitializing, engine, isOffline, messages]);
+  }, [input, isTyping, isInitializing, engine, isEngineReady, messages]);
 
   useEffect(() => {
     const prompt = location.state?.prompt;
@@ -193,9 +207,15 @@ const Assistant: React.FC = () => {
             <Bot size={24} className="text-gradient" />
             <span>CivicBrain Aura</span>
           </div>
-          <div className={`aura-online-status ${isOffline ? 'offline' : 'online'}`}>
-            <div className="aura-status-dot"></div>
-            <span>{isOffline ? 'Local Engine (Offline)' : 'Cloud API (Online)'}</span>
+          <div className="header-status-badges" style={{ display: 'flex', gap: '0.75rem' }}>
+            <div className={`aura-online-status ${isOnline ? 'online' : 'offline'}`}>
+              <div className="aura-status-dot"></div>
+              <span>{isOnline ? 'Online' : 'Offline'}</span>
+            </div>
+            <div className={`aura-online-status ${isEngineReady ? 'online' : 'offline'}`}>
+              <div className="aura-status-dot"></div>
+              <span>{isEngineReady ? 'Local Engine' : 'Cloud API'}</span>
+            </div>
           </div>
         </header>
 
