@@ -2,7 +2,7 @@
 
 :root {
   --font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  
+
   /* Color Palette */
   --bg-deep: #050505;
   --bg-surface: #0a0a0a;
@@ -102,10 +102,386 @@ body {
 
 /* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-fade-in {
   animation: fadeIn 0.6s ease forwards;
+}
+
+/* Aura Chat Assistant Variables & Styles */
+:root {
+  --aura-bg-gradient: linear-gradient(135deg, #020617 0%, #0f172a 100%);
+  --aura-surface-border: rgba(255, 255, 255, .08);
+  --aura-user-msg-bg: linear-gradient(135deg, #6366f1, #8b5cf6);
+  --aura-ai-msg-bg: rgba(30, 41, 59, .6);
+}
+
+.aura-chat-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  background: var(--aura-bg-gradient);
+  border-radius: 1.5rem;
+  overflow: hidden;
+  position: relative;
+  height: 80vh;
+}
+
+/* Header & Status */
+.aura-app-header {
+  padding: 1.25rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+  border-bottom: 1px solid var(--aura-surface-border);
+}
+
+.aura-online-status {
+  font-size: .8rem;
+  padding: .35rem 1rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-weight: 500;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+.aura-online-status.offline {
+  background: #f59e0b1a;
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, .2);
+}
+
+.aura-online-status.online {
+  background: #10b9811a;
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, .2);
+}
+
+.aura-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.offline .aura-status-dot {
+  background: #fbbf24;
+  box-shadow: 0 0 10px #fbbf2480;
+}
+
+.online .aura-status-dot {
+  background: #34d399;
+  box-shadow: 0 0 10px #34d39980;
+}
+
+/* Messages */
+.aura-messages-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 2rem 2rem 6rem 2rem;
+}
+
+.aura-message-wrapper {
+  display: flex;
+  flex-direction: column;
+  max-width: 85%;
+  animation: messageSlideIn .4s cubic-bezier(.16, 1, .3, 1) forwards;
+}
+
+.aura-message-wrapper.user {
+  align-self: flex-end;
+}
+
+.aura-message-wrapper.ai {
+  align-self: flex-start;
+}
+
+.aura-message {
+  padding: 1rem 1.25rem;
+  border-radius: 1.25rem;
+  font-size: 1rem;
+  line-height: 1.6;
+  word-wrap: break-word;
+  box-shadow: 0 8px 24px #00000026;
+}
+
+.aura-message.user {
+  background: var(--aura-user-msg-bg);
+  color: #fff;
+  border-bottom-right-radius: .25rem;
+}
+
+.aura-message.ai {
+  background: var(--aura-ai-msg-bg);
+  border: 1px solid var(--aura-surface-border);
+  color: var(--text-main);
+  border-bottom-left-radius: .25rem;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+.aura-message-time {
+  font-size: .75rem;
+  color: var(--text-dim);
+  margin-top: .5rem;
+  padding: 0 .5rem;
+}
+
+.user .aura-message-time {
+  text-align: right;
+}
+
+/* Input */
+.aura-input-container {
+  padding: 1rem 2rem;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: transparent;
+  border-top: none;
+  z-index: 10;
+  background: linear-gradient(to top, #020617 80%, transparent);
+}
+
+.aura-input-box {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: .5rem .5rem .5rem 1.5rem;
+  border-radius: 2.5rem;
+  background: #0f172ab3;
+  border: 1px solid rgba(255, 255, 255, .1);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+  transition: all .3s cubic-bezier(.4, 0, .2, 1);
+  box-shadow: 0 10px 40px #0000004d;
+}
+
+.aura-input-box:focus-within {
+  border-color: #6366f199;
+  box-shadow: 0 0 0 4px #6366f126, 0 10px 40px #0006;
+  transform: translateY(-2px);
+}
+
+.aura-input-box input[type=text] {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-family: inherit;
+  font-size: 1rem;
+  outline: none;
+}
+
+.aura-send-btn {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all .3s cubic-bezier(.4, 0, .2, 1);
+  box-shadow: 0 8px 16px #6366f14d;
+}
+
+.aura-send-btn:hover:not(:disabled) {
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 12px 24px #6366f166;
+}
+
+.aura-send-btn:disabled {
+  background: #ffffff0d;
+  color: #fff3;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Animations */
+@keyframes messageSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(15px) scale(.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Typing Indicator */
+.aura-typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 1rem 1.5rem;
+  background: var(--aura-ai-msg-bg);
+  border: 1px solid var(--aura-surface-border);
+  border-radius: 1.25rem 1.25rem 1.25rem .25rem;
+  width: fit-content;
+  margin-top: .5rem;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+.aura-typing-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--primary);
+  border-radius: 50%;
+  animation: typing 1.4s infinite ease-in-out both;
+}
+
+.aura-typing-dot:nth-child(1) {
+  animation-delay: -.32s;
+}
+
+.aura-typing-dot:nth-child(2) {
+  animation-delay: -.16s;
+}
+
+@keyframes typing {
+
+  0%,
+  80%,
+  to {
+    transform: scale(0);
+    opacity: .5;
+  }
+
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Initialization Screen */
+.aura-init-screen {
+  position: absolute;
+  inset: 0;
+  background: var(--aura-bg-gradient);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  gap: 2rem;
+  padding: 2rem;
+  text-align: center;
+  border-radius: 1.5rem;
+}
+
+.aura-spinner {
+  width: 64px;
+  height: 64px;
+  border: 4px solid rgba(255, 255, 255, .05);
+  border-left-color: var(--primary);
+  border-right-color: var(--secondary);
+  border-radius: 50%;
+  animation: spin 1s cubic-bezier(.68, -.55, .26, 1.55) infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.aura-progress-container {
+  width: 100%;
+  max-width: 320px;
+  height: 8px;
+  background: #ffffff0d;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 1.5rem;
+  box-shadow: inset 0 2px 4px #0003;
+}
+
+.aura-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--secondary), #d8b4fe);
+  border-radius: 4px;
+  transition: width .4s ease-out;
+  background-size: 200% 100%;
+  animation: gradientMove 2s infinite linear;
+}
+
+@keyframes gradientMove {
+  0% {
+    background-position: 100% 0;
+  }
+
+  to {
+    background-position: -100% 0;
+  }
+}
+
+.aura-welcome-box h2 {
+  font-size: 2rem;
+  margin-bottom: .75rem;
+  background: linear-gradient(to right, #a5b4fc, #e879f9);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Assistant utility classes to replace inline styles */
+.aura-assistant-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0 2rem 2rem 2rem;
+}
+
+.aura-header-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: #fff;
+}
+
+.aura-quick-topics {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.aura-command-icon {
+  color: #94a3b8;
+}
+
+.aura-typing-message {
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.aura-welcome-box p {
+  color: var(--text-dim);
+  font-size: 1.1rem;
 }

@@ -877,6 +877,7 @@
   border-radius: 2rem;
   font-size: 0.8rem;
   font-weight: 600;
+  background-color: rgba(255, 255, 255, 0.1);
   background-color: color-mix(in srgb, var(--step-color), transparent 85%);
   color: var(--step-color);
 }
@@ -923,6 +924,7 @@
   font-weight: 600;
   transition: all 0.2s ease;
   align-self: flex-start;
+  border-color: rgba(255, 255, 255, 0.25);
   border-color: color-mix(in srgb, var(--step-color), transparent 75%);
   color: var(--step-color);
 }
