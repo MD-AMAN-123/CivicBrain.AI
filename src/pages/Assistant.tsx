@@ -27,7 +27,7 @@ const Assistant: React.FC = () => {
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  
+
   // Offline Engine State
   const [engine, setEngine] = useState<MLCEngine | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
@@ -85,34 +85,42 @@ const Assistant: React.FC = () => {
   useEffect(() => {
     let active = true;
     const initEngine = async () => {
+      // Check for WebGPU support before trying local engine
+      if (!('gpu' in navigator)) {
+        console.log("WebGPU not supported, skipping local engine.");
+        setIsInitializing(false);
+        setIsEngineReady(false);
+        return;
+      }
+
       try {
         const initProgressCallback = (report: InitProgressReport) => {
           if (!active) return;
           setProgress(report.progress * 100);
           setInitText(report.text);
         };
-        
+
         const mlcEngine = await CreateMLCEngine(
           SELECTED_MODEL,
           { initProgressCallback }
         );
-        
+
         if (active) {
           setEngine(mlcEngine);
           setIsEngineReady(true);
           setIsInitializing(false);
         }
       } catch (error) {
-        console.error("Failed to initialize WebLLM:", error);
+        // Silently fail to Cloud API if local init fails
         if (active) {
           setIsEngineReady(false);
           setIsInitializing(false);
         }
       }
     };
-    
+
     initEngine();
-    
+
     return () => {
       active = false;
     };
@@ -144,7 +152,7 @@ const Assistant: React.FC = () => {
       sender: 'ai',
       timestamp: new Date()
     };
-    
+
     setMessages(prev => [...prev, initialAiMsg]);
 
     try {
@@ -154,9 +162,9 @@ const Assistant: React.FC = () => {
           role: m.sender === 'user' ? 'user' : 'assistant' as const,
           content: m.text
         }));
-        
+
         history.push({ role: 'user', content: textToSend });
-        
+
         const reqMessages = [
           { role: 'system', content: 'You are an educational AI assistant for CivicBrain.' },
           ...history
@@ -171,19 +179,19 @@ const Assistant: React.FC = () => {
         for await (const chunk of chunks) {
           const content = chunk.choices[0]?.delta?.content || "";
           fullText += content;
-          setMessages(prev => prev.map(msg => 
+          setMessages(prev => prev.map(msg =>
             msg.id === aiMsgId ? { ...msg, text: fullText } : msg
           ));
         }
       } else {
         // Fallback to Gemini Service
         let fullText = "";
-        await explainConcept({ 
-          topic: textToSend, 
+        await explainConcept({
+          topic: textToSend,
           level: 'beginner',
           onStream: (chunk) => {
             fullText += chunk;
-            setMessages(prev => prev.map(msg => 
+            setMessages(prev => prev.map(msg =>
               msg.id === aiMsgId ? { ...msg, text: fullText } : msg
             ));
           }
@@ -191,7 +199,7 @@ const Assistant: React.FC = () => {
       }
     } catch (error) {
       console.error(error);
-      setMessages(prev => prev.map(msg => 
+      setMessages(prev => prev.map(msg =>
         msg.id === aiMsgId ? { ...msg, text: "I'm having trouble connecting to my brain right now. Please try again in a moment!" } : msg
       ));
     } finally {
@@ -304,7 +312,7 @@ const Assistant: React.FC = () => {
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               disabled={isTyping || isInitializing}
             />
-            <button 
+            <button
               className={`aura-voice-btn ${isListening ? 'listening' : ''}`}
               onClick={toggleListening}
               disabled={isTyping || isInitializing}
@@ -312,10 +320,10 @@ const Assistant: React.FC = () => {
             >
               <Mic size={18} />
             </button>
-            <button 
-              className="aura-send-btn" 
-              onClick={() => handleSend()} 
-              disabled={isTyping || !input.trim() || isInitializing} 
+            <button
+              className="aura-send-btn"
+              onClick={() => handleSend()}
+              disabled={isTyping || !input.trim() || isInitializing}
               aria-label="Send message"
             >
               <Send size={18} />

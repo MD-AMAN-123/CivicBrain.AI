@@ -28,11 +28,14 @@ export const explainConcept = async (params: ExplainParams): Promise<string> => 
 
     const data = await response.json();
     
-    if (!data.reply) {
-      return "⚠️ AI is busy. Try again.";
+    if (!response.ok) {
+      return data.reply || `⚠️ Server error (${response.status})`;
     }
     
-    // Call onStream with the full text just in case components still expect it
+    if (!data.reply) {
+      return "⚠️ Received empty response from AI.";
+    }
+    
     if (onStream) {
       onStream(data.reply);
     }
@@ -40,7 +43,9 @@ export const explainConcept = async (params: ExplainParams): Promise<string> => 
     return data.reply;
   } catch (error: any) {
     console.error("Gemini Error:", error);
-    const msg = `⚠️ Connection failed. ${error.message}`;
+    const msg = error.name === 'AbortError' 
+      ? "⚠️ Request timed out." 
+      : `⚠️ Connection failed. Check your internet.`;
     if (onStream) onStream(msg);
     return msg;
   }
