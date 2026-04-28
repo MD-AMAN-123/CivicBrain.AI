@@ -2,18 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { MapPin, Info, Calendar, User } from 'lucide-react';
 
 const VotingLocation: React.FC = () => {
-  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [constituency, setConstituency] = useState<string>("Detecting...");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          });
+        () => {
           // In a real app, we would use reverse geocoding to get the constituency
           setConstituency("New Delhi Central");
           setLoading(false);
