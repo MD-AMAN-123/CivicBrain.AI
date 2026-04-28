@@ -28,10 +28,29 @@ const Quiz: React.FC<QuizProps> = ({ topic = "Elections", onClose }) => {
     loadQuiz();
   }, [topic]);
 
+  const [loadingMsg, setLoadingMsg] = useState("Analyzing recent learning...");
+
+  useEffect(() => {
+    if (loading) {
+      const messages = [
+        "Analyzing recent learning...",
+        "Curating relevant questions...",
+        "Generating MCQ options...",
+        "Finalizing your challenge..."
+      ];
+      let i = 0;
+      const interval = setInterval(() => {
+        setLoadingMsg(messages[i % messages.length]);
+        i++;
+      }, 2000);
+      return () => clearInterval(interval);
+    }
+  }, [loading]);
+
   const loadQuiz = async () => {
     setLoading(true);
     const data = await generateQuiz(topic);
-    setQuestions(data);
+    setQuestions(data || []);
     setLoading(false);
     setCurrentStep(0);
     setScore(0);
@@ -62,9 +81,32 @@ const Quiz: React.FC<QuizProps> = ({ topic = "Elections", onClose }) => {
 
   if (loading) {
     return (
-      <div className="quiz-container flex-center">
+      <div className="quiz-container flex-center" style={{ minHeight: '200px' }}>
         <div className="aura-spinner"></div>
-        <p style={{ marginTop: '1rem' }}>Generating your personalized quiz...</p>
+        <p style={{ marginTop: '1rem', color: 'var(--text-dim)' }}>{loadingMsg}</p>
+        {onClose && (
+          <button className="learn-more-btn" onClick={onClose} style={{ marginTop: '1.5rem', background: 'rgba(255,255,255,0.05)' }}>
+            Cancel
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <div className="quiz-container flex-center" style={{ minHeight: '200px' }}>
+        <p>⚠️ Failed to generate quiz. Please try again.</p>
+        <div className="quiz-actions" style={{ marginTop: '1.5rem' }}>
+          <button className="learn-more-btn" onClick={loadQuiz}>
+            <RefreshCw size={18} /> Retry
+          </button>
+          {onClose && (
+            <button className="learn-more-btn" onClick={onClose} style={{ marginTop: '0.5rem', background: 'transparent' }}>
+              Close
+            </button>
+          )}
+        </div>
       </div>
     );
   }
@@ -115,9 +157,9 @@ const Quiz: React.FC<QuizProps> = ({ topic = "Elections", onClose }) => {
           exit={{ opacity: 0, x: -20 }}
           className="question-section"
         >
-          <h3 className="quiz-question">{currentQuestion.question}</h3>
+          <h3 className="quiz-question">{currentQuestion?.question}</h3>
           <div className="options-grid">
-            {currentQuestion.options.map((option, idx) => {
+            {currentQuestion?.options.map((option, idx) => {
               let className = "option-card glass-card";
               if (selectedOption === option) {
                 className += isCorrect ? " correct" : " incorrect";
