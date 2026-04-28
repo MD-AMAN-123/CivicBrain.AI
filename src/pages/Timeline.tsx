@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { UserPlus, ClipboardList, Megaphone, Vote, BarChart3, CheckCircle2 } from 'lucide-react';
+import { updateModuleCompletion } from '../services/userService';
 
 const timelineSteps = [
   {
@@ -55,7 +56,7 @@ const Timeline: React.FC = () => {
     <div className="timeline-view">
       <div className="timeline-header">
         <h2 className="view-title">The Election <span className="text-gradient">Journey</span></h2>
-        <p className="view-subtitle">Understand the democratic process from start to finish.</p>
+        <p className="view-subtitle">Scroll through the democratic process from start to finish.</p>
       </div>
 
       <div className="timeline-container">
@@ -63,8 +64,8 @@ const Timeline: React.FC = () => {
           <motion.div 
             key={index}
             className="timeline-item"
-            initial={{ opacity: 0, x: index % 2 === 0 ? -50 : 50 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: index * 0.1 }}
             style={{ '--step-color': step.color } as React.CSSProperties}
@@ -92,7 +93,10 @@ const Timeline: React.FC = () => {
               </ul>
               <button 
                 className="learn-more-btn" 
-                onClick={() => navigate('/assistant', { state: { prompt: `Deep dive into ${step.title}: ${step.description}` } })}
+                onClick={() => {
+                  updateModuleCompletion(step.title);
+                  navigate('/assistant', { state: { prompt: `Deep dive into ${step.title}: ${step.description}` } });
+                }}
               >
                 Deep Dive Explainer
               </button>

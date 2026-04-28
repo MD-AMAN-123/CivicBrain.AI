@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Send, Bot, Command } from 'lucide-react';
+import { Send, Bot, Command, Mic } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { CreateMLCEngine, MLCEngine } from "@mlc-ai/web-llm";
@@ -35,6 +35,8 @@ const Assistant: React.FC = () => {
   const [initText, setInitText] = useState("Initializing Engine...");
   const [isEngineReady, setIsEngineReady] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -42,6 +44,24 @@ const Assistant: React.FC = () => {
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
+
+    // Initialize Speech Recognition
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+      recognitionRef.current.lang = 'en-US';
+
+      recognitionRef.current.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setInput(transcript);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onerror = () => setIsListening(false);
+      recognitionRef.current.onend = () => setIsListening(false);
+    }
 
     return () => {
       window.removeEventListener('online', handleOnline);
@@ -51,6 +71,16 @@ const Assistant: React.FC = () => {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const handledPromptRef = useRef<string | null>(null);
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    } else {
+      recognitionRef.current?.start();
+      setIsListening(true);
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -274,6 +304,14 @@ const Assistant: React.FC = () => {
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               disabled={isTyping || isInitializing}
             />
+            <button 
+              className={`aura-voice-btn ${isListening ? 'listening' : ''}`}
+              onClick={toggleListening}
+              disabled={isTyping || isInitializing}
+              title="Voice Input"
+            >
+              <Mic size={18} />
+            </button>
             <button 
               className="aura-send-btn" 
               onClick={() => handleSend()} 

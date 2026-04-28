@@ -1,9 +1,19 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import 'chart.js/auto';
 import { Doughnut, Line } from 'react-chartjs-2';
-import { TrendingUp, BookOpen, Clock, Target } from 'lucide-react';
+import { TrendingUp, BookOpen, Clock, Target, PlayCircle } from 'lucide-react';
+import Quiz from '../components/Quiz';
+import VotingLocation from '../components/VotingLocation';
+import { getUserProgress, type UserProgress } from '../services/userService';
 
 const Dashboard: React.FC = () => {
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [progress, setProgress] = useState<UserProgress | null>(null);
+
+  useEffect(() => {
+    getUserProgress().then(setProgress);
+  }, []);
+
   const progressData = {
     labels: ['Completed', 'In Progress', 'Locked'],
     datasets: [
@@ -39,32 +49,36 @@ const Dashboard: React.FC = () => {
             <BookOpen className="stat-icon" />
             <span>Modules Done</span>
           </div>
-          <div className="stat-value">12 / 20</div>
-          <div className="stat-footer text-green">+2 this week</div>
+          <div className="stat-value">{progress?.completedModules.length || 0} / 20</div>
+          <div className="stat-footer text-green">+{progress?.completedModules.length || 0} total</div>
         </div>
         <div className="stat-card glass-card">
           <div className="stat-header">
             <Clock className="stat-icon" />
-            <span>Time Spent</span>
+            <span>Learning Points</span>
           </div>
-          <div className="stat-value">4.5 hrs</div>
-          <div className="stat-footer">Daily avg: 45m</div>
+          <div className="stat-value">{progress?.totalPoints || 0}</div>
+          <div className="stat-footer">XP Gained</div>
         </div>
         <div className="stat-card glass-card">
           <div className="stat-header">
             <Target className="stat-icon" />
-            <span>Quiz Score</span>
+            <span>Avg Quiz Score</span>
           </div>
-          <div className="stat-value">88%</div>
-          <div className="stat-footer text-purple">Top 10% this week</div>
+          <div className="stat-value">
+            {progress?.quizScores.length
+              ? Math.round((progress.quizScores.reduce((a, b) => a + b, 0) / (progress.quizScores.length * 3)) * 100)
+              : 0}%
+          </div>
+          <div className="stat-footer text-purple">{progress?.quizScores.length || 0} Quizzes taken</div>
         </div>
         <div className="stat-card glass-card">
           <div className="stat-header">
             <TrendingUp className="stat-icon" />
             <span>Rank</span>
           </div>
-          <div className="stat-value">Civic Pro</div>
-          <div className="stat-footer">500 pts to Master</div>
+          <div className="stat-value">{(progress?.totalPoints || 0) > 100 ? "Civic Pro" : "Beginner"}</div>
+          <div className="stat-footer">{progress?.badges.length || 0} Badges earned</div>
         </div>
       </div>
 
@@ -75,12 +89,55 @@ const Dashboard: React.FC = () => {
             <Line data={activityData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }} />
           </div>
         </div>
-        <div className="chart-card glass-card side-chart">
-          <h3>Journey Progress</h3>
-          <div className="chart-wrapper doughnut">
-            <Doughnut data={progressData} options={{ cutout: '70%', plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } } }} />
+
+        <div className="side-column">
+          <VotingLocation />
+          <div className="chart-card glass-card side-chart">
+            <h3>Journey Progress</h3>
+            <div className="chart-wrapper doughnut">
+              <Doughnut data={progressData} options={{ cutout: '70%', plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } } }} />
+            </div>
           </div>
         </div>
+      </div>
+
+      <div className="badges-section">
+        <h3>Achievements & <span className="text-gradient">Badges</span></h3>
+        <div className="badges-grid">
+          <div className={`badge-card glass-card ${progress?.completedModules.length ? 'earned' : ''}`}>
+            <div className="badge-icon">🗳️</div>
+            <span>Smart Voter</span>
+          </div>
+          <div className={`badge-card glass-card ${progress?.streak ? 'earned' : ''}`}>
+            <div className="badge-icon">🔥</div>
+            <span>Streak</span>
+          </div>
+          <div className={`badge-card glass-card ${progress?.badges.includes('quiz_master') ? 'earned' : ''}`}>
+            <div className="badge-icon">🧠</div>
+            <span>Quiz Master</span>
+          </div>
+          <div className={`badge-card glass-card ${progress?.totalPoints && progress.totalPoints > 500 ? 'earned' : ''}`}>
+            <div className="badge-icon">🏛️</div>
+            <span>Civic Leader</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="quiz-section-dashboard glass-card">
+        {showQuiz ? (
+          <Quiz topic="Elections and Voting" onClose={() => setShowQuiz(false)} />
+        ) : (
+          <div className="quiz-promo">
+            <div className="promo-text">
+              <h3>Ready for a challenge?</h3>
+              <p>Test your knowledge with an AI-generated quiz based on your recent learning.</p>
+            </div>
+            <button className="aura-send-btn" onClick={() => setShowQuiz(true)} style={{ width: 'auto', borderRadius: '1rem', padding: '0 2rem' }}>
+              <PlayCircle size={20} style={{ marginRight: '0.5rem' }} />
+              Start Quiz
+            </button>
+          </div>
+        )}
       </div>
 
       <style dangerouslySetInnerHTML={{
@@ -89,6 +146,7 @@ const Dashboard: React.FC = () => {
           display: flex;
           flex-direction: column;
           gap: 2rem;
+          padding-bottom: 4rem;
         }
 
         .view-title {
@@ -137,9 +195,15 @@ const Dashboard: React.FC = () => {
           gap: 1.5rem;
         }
 
+        .side-column {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+        }
+
         .chart-card {
           padding: 2rem;
-          height: 400px;
+          height: 350px;
           display: flex;
           flex-direction: column;
           gap: 1.5rem;
@@ -151,7 +215,65 @@ const Dashboard: React.FC = () => {
         }
 
         .doughnut {
-          max-height: 250px;
+          max-height: 200px;
+        }
+
+        .quiz-section-dashboard {
+          padding: 2rem;
+        }
+
+        .quiz-promo {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 2rem;
+        }
+
+        .promo-text h3 {
+          font-size: 1.5rem;
+          margin-bottom: 0.5rem;
+        }
+
+        .promo-text p {
+          color: var(--text-dim);
+        }
+
+        .badges-section {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+        }
+
+        .badges-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 1rem;
+        }
+
+        .badge-card {
+          padding: 1.5rem;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 1rem;
+          opacity: 0.5;
+          grayscale: 1;
+        }
+
+        .badge-card.earned {
+          opacity: 1;
+          grayscale: 0;
+          border-color: var(--primary);
+          background: rgba(99, 102, 241, 0.05);
+        }
+
+        .badge-icon {
+          font-size: 2.5rem;
+        }
+
+        .badge-card span {
+          font-size: 0.9rem;
+          font-weight: 600;
         }
 
         .text-green { color: #10b981; }
@@ -166,8 +288,9 @@ const Dashboard: React.FC = () => {
             grid-template-columns: 1fr;
           }
 
-          .chart-card {
-            height: 350px;
+          .quiz-promo {
+            flex-direction: column;
+            text-align: center;
           }
         }
 
