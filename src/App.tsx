@@ -82,30 +82,30 @@ const App: React.FC = () => {
         </div>
 
         <div className="sidebar-links">
-          <Link to="/" className="nav-link">
+          <Link to="/" className="nav-link" aria-label="Go to Home">
             <Home size={20} />
             <span>Home</span>
           </Link>
-          <Link to="/dashboard" className="nav-link">
+          <Link to="/dashboard" className="nav-link" aria-label="Go to Dashboard">
             <LayoutDashboard size={20} />
             <span>Dashboard</span>
           </Link>
-          <Link to="/timeline" className="nav-link">
+          <Link to="/timeline" className="nav-link" aria-label="Go to Process Guide">
             <History size={20} />
             <span>Process Guide</span>
           </Link>
-          <Link to="/assistant" className="nav-link">
+          <Link to="/assistant" className="nav-link" aria-label="Go to AI Assistant">
             <MessageSquare size={20} />
             <span>AI Assistant</span>
           </Link>
         </div>
 
         <div className="sidebar-footer">
-          <Link to="/admin" className="nav-link">
+          <Link to="/admin" className="nav-link" aria-label="Go to Admin Panel">
             <Settings size={20} />
             <span>Admin Panel</span>
           </Link>
-          <div className="user-profile">
+          <div className="user-profile" role="complementary" aria-label="User profile summary">
             <div className="avatar glass-card">
               <User size={24} />
             </div>
@@ -114,6 +114,7 @@ const App: React.FC = () => {
               <span className="user-level">{user ? 'Verified Voter' : 'Beginner'}</span>
             </div>
           </div>
+
         </div>
       </nav>
 

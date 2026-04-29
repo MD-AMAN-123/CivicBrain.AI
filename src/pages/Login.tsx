@@ -39,9 +39,11 @@ const Login: React.FC = () => {
       }
 
       navigate('/dashboard');
-    } catch (err: any) {
-      console.error('Authentication error:', err);
-      setError(err.message || 'An error occurred during authentication.');
+    } catch (err: unknown) {
+      const authError = err as { message?: string };
+      console.error('Authentication error:', authError);
+      setError(authError.message || 'An error occurred during authentication.');
+
     } finally {
       setLoading(false);
     }

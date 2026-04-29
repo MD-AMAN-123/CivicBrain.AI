@@ -4,14 +4,15 @@ import { getFirestore } from 'firebase/firestore';
 
 // Replace with your actual Firebase config
 const firebaseConfig = {
-  apiKey: "AIzaSyDE6ibn86aiLeXbIld_MxT8jxe4O-XlW_M",
-  authDomain: "civicbrain-ai.firebaseapp.com",
-  projectId: "civicbrain-ai",
-  storageBucket: "civicbrain-ai.firebasestorage.app",
-  messagingSenderId: "535154913013",
-  appId: "1:535154913013:web:b32a6ba38287fb2e775fbc",
-  measurementId: "G-ZFHVQ17369"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
+
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);

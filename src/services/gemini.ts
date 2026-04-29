@@ -41,11 +41,13 @@ export const explainConcept = async (params: ExplainParams): Promise<string> => 
     }
     
     return data.reply;
-  } catch (error: any) {
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err : new Error(String(err));
     console.error("Gemini Error:", error);
     const msg = error.name === 'AbortError' 
       ? "⚠️ Request timed out." 
       : `⚠️ Connection failed. Check your internet.`;
+
     if (onStream) onStream(msg);
     return msg;
   }

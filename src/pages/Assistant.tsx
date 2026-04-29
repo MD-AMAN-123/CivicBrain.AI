@@ -6,6 +6,30 @@ import { CreateMLCEngine, MLCEngine } from "@mlc-ai/web-llm";
 import type { InitProgressReport } from "@mlc-ai/web-llm";
 import { explainConcept } from '../services/gemini';
 
+// --- Type definitions for Speech Recognition ---
+interface SpeechRecognitionEvent extends Event {
+  results: {
+    [key: number]: {
+      [key: number]: {
+        transcript: string;
+      };
+    };
+  };
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: (event: SpeechRecognitionEvent) => void;
+  onerror: (event: any) => void;
+  onend: () => void;
+  start: () => void;
+  stop: () => void;
+}
+// ------------------------------------------------
+
+
 interface Message {
   id: number;
   text: string;
@@ -36,7 +60,7 @@ const Assistant: React.FC = () => {
   const [isEngineReady, setIsEngineReady] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isListening, setIsListening] = useState(false);
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -46,22 +70,28 @@ const Assistant: React.FC = () => {
     window.addEventListener('offline', handleOffline);
 
     // Initialize Speech Recognition
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = false;
-      recognitionRef.current.interimResults = false;
-      recognitionRef.current.lang = 'en-US';
+    const win = window as any;
+    const SpeechRecognitionClass = win.SpeechRecognition || win.webkitSpeechRecognition;
 
-      recognitionRef.current.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        setInput(transcript);
-        setIsListening(false);
-      };
+    if (SpeechRecognitionClass) {
+      recognitionRef.current = new SpeechRecognitionClass();
 
-      recognitionRef.current.onerror = () => setIsListening(false);
-      recognitionRef.current.onend = () => setIsListening(false);
+      if (recognitionRef.current) {
+        recognitionRef.current.continuous = false;
+        recognitionRef.current.interimResults = false;
+        recognitionRef.current.lang = 'en-US';
+
+        recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
+          const transcript = event.results[0][0].transcript;
+          setInput(transcript);
+          setIsListening(false);
+        };
+
+        recognitionRef.current.onerror = () => setIsListening(false);
+        recognitionRef.current.onend = () => setIsListening(false);
+      }
     }
+
 
     return () => {
       window.removeEventListener('online', handleOnline);
@@ -110,13 +140,14 @@ const Assistant: React.FC = () => {
           setIsEngineReady(true);
           setIsInitializing(false);
         }
-      } catch (error) {
+      } catch {
         // Silently fail to Cloud API if local init fails
         if (active) {
           setIsEngineReady(false);
           setIsInitializing(false);
         }
       }
+
     };
 
     initEngine();
@@ -156,35 +187,8 @@ const Assistant: React.FC = () => {
     setMessages(prev => [...prev, initialAiMsg]);
 
     try {
-      if (engine && isEngineReady) {
-        // Use local model
-        const history = messages.map(m => ({
-          role: m.sender === 'user' ? 'user' : 'assistant' as const,
-          content: m.text
-        }));
-
-        history.push({ role: 'user', content: textToSend });
-
-        const reqMessages = [
-          { role: 'system', content: 'You are an educational AI assistant for CivicBrain.' },
-          ...history
-        ];
-
-        const chunks = await engine.chat.completions.create({
-          messages: reqMessages as any,
-          stream: true,
-        });
-
-        let fullText = "";
-        for await (const chunk of chunks) {
-          const content = chunk.choices[0]?.delta?.content || "";
-          fullText += content;
-          setMessages(prev => prev.map(msg =>
-            msg.id === aiMsgId ? { ...msg, text: fullText } : msg
-          ));
-        }
-      } else {
-        // Fallback to Gemini Service
+      if (isOnline) {
+        // Primary: Use Gemini Cloud API when online
         let fullText = "";
         await explainConcept({
           topic: textToSend,
@@ -196,16 +200,53 @@ const Assistant: React.FC = () => {
             ));
           }
         });
+      } else if (engine && isEngineReady) {
+        // Fallback: Use local Gemma model only when offline
+        const history = messages.map(m => ({
+          role: (m.sender === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
+          content: m.text
+        }));
+
+        history.push({ role: 'user', content: textToSend });
+
+        const reqMessages = [
+          { role: 'system' as const, content: 'You are an educational AI assistant for CivicBrain.' },
+          ...history
+        ];
+
+        const chunks = await engine.chat.completions.create({
+          messages: reqMessages as any, // Cast to any to satisfy the complex Union type of web-llm
+          stream: true,
+        });
+
+
+
+        let fullText = "";
+        for await (const chunk of chunks) {
+          const content = chunk.choices[0]?.delta?.content || "";
+          fullText += content;
+          setMessages(prev => prev.map(msg =>
+            msg.id === aiMsgId ? { ...msg, text: fullText } : msg
+          ));
+        }
+      } else {
+        // No connection and no local engine
+        setMessages(prev => prev.map(msg =>
+          msg.id === aiMsgId ? { ...msg, text: "I'm currently offline and my local brain isn't ready yet. Please check your internet connection!" } : msg
+        ));
       }
-    } catch (error) {
-      console.error(error);
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      console.error("Gemini Error:", error);
+
       setMessages(prev => prev.map(msg =>
         msg.id === aiMsgId ? { ...msg, text: "I'm having trouble connecting to my brain right now. Please try again in a moment!" } : msg
       ));
     } finally {
       setIsTyping(false);
     }
-  }, [input, isTyping, isInitializing, engine, isEngineReady, messages]);
+  }, [input, isTyping, isInitializing, engine, isEngineReady, messages, isOnline]);
+
 
   useEffect(() => {
     const prompt = location.state?.prompt;
@@ -250,11 +291,12 @@ const Assistant: React.FC = () => {
               <div className="aura-status-dot"></div>
               <span>{isOnline ? 'Online' : 'Offline'}</span>
             </div>
-            <div className={`aura-online-status ${isEngineReady ? 'online' : 'offline'}`}>
+            <div className={`aura-online-status ${isOnline ? 'online' : (isEngineReady ? 'online' : 'offline')}`}>
               <div className="aura-status-dot"></div>
-              <span>{isEngineReady ? 'Local Engine' : 'Cloud API'}</span>
+              <span>{isOnline ? 'Gemini AI' : (isEngineReady ? 'Gemma (Offline)' : 'Cloud Only')}</span>
             </div>
           </div>
+
         </header>
 
         <div className="aura-messages-list">
