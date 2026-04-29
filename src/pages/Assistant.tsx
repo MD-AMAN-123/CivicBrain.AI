@@ -55,10 +55,11 @@ const Assistant: React.FC = () => {
 
   // Offline Engine State
   const [engine, setEngine] = useState<MLCEngine | null>(null);
-  const [isInitializing, setIsInitializing] = useState(true);
+  const [isInitializing, setIsInitializing] = useState(false); // Start false to allow cloud chat
   const [progress, setProgress] = useState(0);
-  const [initText, setInitText] = useState("Initializing Engine...");
+  const [initText, setInitText] = useState("Initializing Local Brain...");
   const [isEngineReady, setIsEngineReady] = useState(false);
+
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
@@ -139,8 +140,10 @@ const Assistant: React.FC = () => {
         if (active) {
           setEngine(mlcEngine);
           setIsEngineReady(true);
+          // If we were explicitly waiting (offline), we stop initializing now
           setIsInitializing(false);
         }
+
       } catch {
         // Silently fail to Cloud API if local init fails
         if (active) {
@@ -150,8 +153,15 @@ const Assistant: React.FC = () => {
       }
 
     };
+    
+    // Only show the blocking initialization screen if the user is offline 
+    // and needs the local model to function.
+    if (!isOnline) {
+      setIsInitializing(true);
+    }
 
     initEngine();
+
 
     return () => {
       active = false;
@@ -269,12 +279,15 @@ const Assistant: React.FC = () => {
   return (
     <div className="assistant-view aura-assistant-view">
       <div className="aura-chat-container">
-        {isInitializing && (
+        {isInitializing && !isOnline && (
           <div className="aura-init-screen">
             <div className="aura-spinner"></div>
             <div className="aura-welcome-box">
               <h2>Waking up Aura AI...</h2>
               <p>{initText}</p>
+              <p style={{ fontSize: '0.9rem', opacity: 0.7, marginTop: '0.5rem' }}>
+                You're currently offline. I'm loading my local brain so we can keep talking!
+              </p>
             </div>
             <div className="aura-progress-container">
               <style>{`.aura-progress-bar { width: ${Math.max(5, progress)}%; }`}</style>
@@ -282,6 +295,7 @@ const Assistant: React.FC = () => {
             </div>
           </div>
         )}
+
 
         <header className="aura-app-header">
           <div className="header-title aura-header-title">
