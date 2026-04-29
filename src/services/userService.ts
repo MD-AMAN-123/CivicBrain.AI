@@ -52,33 +52,36 @@ export const getUserProgress = async (): Promise<UserProgress> => {
 
 export const updateModuleCompletion = async (moduleTitle: string) => {
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
+  if (!user || !db) return;
 
   const userRef = doc(db, 'users', user.id);
   await updateDoc(userRef, {
     completedModules: arrayUnion(moduleTitle),
     totalPoints: increment(10)
   });
+
 };
 
 export const saveQuizScore = async (score: number) => {
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
+  if (!user || !db) return;
 
   const userRef = doc(db, 'users', user.id);
   await updateDoc(userRef, {
     quizScores: arrayUnion(score),
     totalPoints: increment(score * 5)
   });
+
 };
 
 export const earnBadge = async (badgeId: string) => {
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
+  if (!user || !db) return;
 
   const userRef = doc(db, 'users', user.id);
   await updateDoc(userRef, {
     badges: arrayUnion(badgeId)
   });
+
 };
 
