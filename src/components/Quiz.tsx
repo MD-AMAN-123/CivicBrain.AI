@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, XCircle, RefreshCw, Award } from 'lucide-react';
 import { generateQuiz } from '../services/gemini';
+
 import { saveQuizScore, earnBadge } from '../services/userService';
 
 interface QuizQuestion {
@@ -59,11 +60,11 @@ const Quiz: React.FC<QuizProps> = ({ topic = "Elections", onClose }) => {
 
   const handleOptionClick = (option: string) => {
     if (selectedOption !== null) return;
-    
+
     setSelectedOption(option);
     const correct = option === questions[currentStep].answer;
     setIsCorrect(correct);
-    
+
     // Use functional update to ensure we have the latest score when calculating final results
     if (correct) {
       setScore(prev => prev + 1);
@@ -123,7 +124,7 @@ const Quiz: React.FC<QuizProps> = ({ topic = "Elections", onClose }) => {
 
   if (showResult) {
     return (
-      <motion.div 
+      <motion.div
         className="quiz-result glass-card"
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -160,7 +161,7 @@ const Quiz: React.FC<QuizProps> = ({ topic = "Elections", onClose }) => {
       </div>
 
       <AnimatePresence mode="wait">
-        <motion.div 
+        <motion.div
           key={currentStep}
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -178,8 +179,8 @@ const Quiz: React.FC<QuizProps> = ({ topic = "Elections", onClose }) => {
               }
 
               return (
-                <button 
-                  key={idx} 
+                <button
+                  key={idx}
                   className={className}
                   onClick={() => handleOptionClick(option)}
                   disabled={selectedOption !== null}

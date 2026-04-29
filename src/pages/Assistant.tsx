@@ -6,6 +6,7 @@ import { CreateMLCEngine, MLCEngine } from "@mlc-ai/web-llm";
 import type { InitProgressReport } from "@mlc-ai/web-llm";
 import { explainConcept } from '../services/gemini';
 
+
 // --- Type definitions for Speech Recognition ---
 interface SpeechRecognitionEvent extends Event {
   results: {
@@ -142,18 +143,22 @@ const Assistant: React.FC = () => {
           setIsEngineReady(true);
           // If we were explicitly waiting (offline), we stop initializing now
           setIsInitializing(false);
+          console.log("Local engine ready.");
         }
 
-      } catch {
-        // Silently fail to Cloud API if local init fails
+
+      } catch (err) {
+        console.error("Local init error:", err);
         if (active) {
           setIsEngineReady(false);
           setIsInitializing(false);
+          setInitText(`Error: ${err instanceof Error ? err.message : "Initialization failed"}`);
         }
       }
 
+
     };
-    
+
     // Only show the blocking initialization screen if the user is offline 
     // and needs the local model to function.
     if (!isOnline) {
@@ -204,7 +209,8 @@ const Assistant: React.FC = () => {
         await explainConcept({
           topic: textToSend,
           level: 'beginner',
-          onStream: (chunk) => {
+          onStream: (chunk: string) => {
+
             fullText += chunk;
             setMessages(prev => prev.map(msg =>
               msg.id === aiMsgId ? { ...msg, text: fullText } : msg
@@ -242,10 +248,18 @@ const Assistant: React.FC = () => {
         }
       } else {
         // No connection and no local engine
+        let errorMessage = "I'm currently offline and my local brain isn't ready yet.";
+        if (!('gpu' in navigator)) {
+          errorMessage = "I'm offline, and your browser doesn't support WebGPU for my local brain. Please connect to the internet!";
+        } else {
+          errorMessage = "I'm offline and still loading my local brain. Please check your internet connection or wait a moment!";
+        }
+        
         setMessages(prev => prev.map(msg =>
-          msg.id === aiMsgId ? { ...msg, text: "I'm currently offline and my local brain isn't ready yet. Please check your internet connection!" } : msg
+          msg.id === aiMsgId ? { ...msg, text: errorMessage } : msg
         ));
       }
+
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error(String(err));
       console.error("Gemini Error:", error);
@@ -285,8 +299,18 @@ const Assistant: React.FC = () => {
             <div className="aura-welcome-box">
               <h2>Waking up Aura AI...</h2>
               <p>{initText}</p>
-              <p style={{ fontSize: '0.9rem', opacity: 0.7, marginTop: '0.5rem' }}>
-                You're currently offline. I'm loading my local brain so we can keep talking!
+              <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                <button className="topic-chip glass-card" onClick={() => setIsInitializing(false)}>
+                  Cancel Loading
+                </button>
+                <button className="topic-chip glass-card" onClick={() => window.location.reload()}>
+                  Retry
+                </button>
+              </div>
+              <p style={{ fontSize: '0.8rem', opacity: 0.6, marginTop: '1.5rem', maxWidth: '300px' }}>
+                {!('gpu' in navigator) 
+                  ? "⚠️ Your browser/device doesn't support WebGPU. Internet is required." 
+                  : "Loading my local brain can take a few minutes on the first visit."}
               </p>
             </div>
             <div className="aura-progress-container">
@@ -295,6 +319,7 @@ const Assistant: React.FC = () => {
             </div>
           </div>
         )}
+
 
 
         <header className="aura-app-header">

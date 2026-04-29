@@ -70,9 +70,6 @@ export const explainConcept = async (params: ExplainParams): Promise<string> => 
   }
 };
 
-
-// Removed deprecated streaming and fallback functions
-
 export const generateQuiz = async (topic: string = "general elections"): Promise<QuizQuestion[]> => {
   try {
     const text = await explainConcept({ topic: `Generate a 3-question quiz about ${topic} in JSON array format: [{question, options, answer}]. Return ONLY JSON.`, level: 'intermediate' });
