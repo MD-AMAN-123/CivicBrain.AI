@@ -1,7 +1,9 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import './App.css';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
-import { Home, LayoutDashboard, History, MessageSquare, Settings, User, ShieldCheck } from 'lucide-react';
+import { Home, LayoutDashboard, History, MessageSquare, Settings, User, ShieldCheck, LogOut } from 'lucide-react';
+import { supabase } from './lib/supabase';
+
 const HomeView = lazy(() => import('./pages/HomeView.tsx'));
 const Dashboard = lazy(() => import('./pages/Dashboard.tsx'));
 const Timeline = lazy(() => import('./pages/Timeline.tsx'));
@@ -9,15 +11,65 @@ const Assistant = lazy(() => import('./pages/Assistant.tsx'));
 const Admin = lazy(() => import('./pages/Admin.tsx'));
 const Login = lazy(() => import('./pages/Login.tsx'));
 
+// Simple Error Boundary Component
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex-center error-screen">
+          <h2>Oops! Something went wrong.</h2>
+          <button className="btn-primary mt-4" onClick={() => window.location.reload()}>
+            Reload Page
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 const App: React.FC = () => {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = React.useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleSearch = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && searchTerm.trim()) {
       navigate('/assistant', { state: { prompt: searchTerm } });
       setSearchTerm('');
     }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/');
   };
 
   return (
@@ -58,8 +110,8 @@ const App: React.FC = () => {
               <User size={24} />
             </div>
             <div className="user-info">
-              <span className="user-name">Guest User</span>
-              <span className="user-level">Beginner</span>
+              <span className="user-name">{user ? (user.user_metadata?.full_name || user.email) : 'Guest User'}</span>
+              <span className="user-level">{user ? 'Verified Voter' : 'Beginner'}</span>
             </div>
           </div>
         </div>
@@ -78,23 +130,31 @@ const App: React.FC = () => {
             />
           </div>
           <div className="header-actions">
-            <Link to="/login">
-              <button className="btn-primary">Become a Smart Voter</button>
-            </Link>
+            {user ? (
+              <button className="btn-outline flex-center gap-2" onClick={handleLogout}>
+                <LogOut size={18} /> Sign Out
+              </button>
+            ) : (
+              <Link to="/login">
+                <button className="btn-primary">Become a Smart Voter</button>
+              </Link>
+            )}
           </div>
         </header>
 
         <div className="content-viewport animate-fade-in">
-          <Suspense fallback={<div className="flex-center loading-screen">Loading...</div>}>
-            <Routes>
-              <Route path="/" element={<HomeView />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/timeline" element={<Timeline />} />
-              <Route path="/assistant" element={<Assistant />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/login" element={<Login />} />
-            </Routes>
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={<div className="flex-center loading-screen">Loading...</div>}>
+              <Routes>
+                <Route path="/" element={<HomeView />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/timeline" element={<Timeline />} />
+                <Route path="/assistant" element={<Assistant />} />
+                <Route path="/admin" element={<Admin />} />
+                <Route path="/login" element={<Login />} />
+              </Routes>
+            </Suspense>
+          </ErrorBoundary>
         </div>
       </main>
 
@@ -112,7 +172,7 @@ const App: React.FC = () => {
         <Link to="/assistant" className="nav-link">
           <MessageSquare size={24} />
         </Link>
-        <Link to="/login" className="nav-link">
+        <Link to={user ? "/dashboard" : "/login"} className="nav-link">
           <User size={24} />
         </Link>
       </div>
@@ -121,8 +181,8 @@ const App: React.FC = () => {
       <div className="blob blob-1"></div>
       <div className="blob blob-2"></div>
     </div>
-
   );
 };
 
 export default App;
+

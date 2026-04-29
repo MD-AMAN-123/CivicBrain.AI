@@ -1,5 +1,6 @@
 import { db, auth } from './firebase';
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, increment } from 'firebase/firestore';
+import { supabase } from '../lib/supabase';
 
 export interface UserProgress {
   completedModules: string[];
@@ -20,10 +21,12 @@ const DEFAULT_PROGRESS: UserProgress = {
 };
 
 export const getUserProgress = async (): Promise<UserProgress> => {
-  const user = auth.currentUser;
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) return DEFAULT_PROGRESS;
 
-  const userRef = doc(db, 'users', user.uid);
+  // We are still using Firestore for data storage for now, but using Supabase for Auth
+  // We'll map Supabase user.id to Firestore document ID
+  const userRef = doc(db, 'users', user.id);
   const userSnap = await getDoc(userRef);
 
   if (userSnap.exists()) {
@@ -35,10 +38,10 @@ export const getUserProgress = async (): Promise<UserProgress> => {
 };
 
 export const updateModuleCompletion = async (moduleTitle: string) => {
-  const user = auth.currentUser;
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
 
-  const userRef = doc(db, 'users', user.uid);
+  const userRef = doc(db, 'users', user.id);
   await updateDoc(userRef, {
     completedModules: arrayUnion(moduleTitle),
     totalPoints: increment(10)
@@ -46,10 +49,10 @@ export const updateModuleCompletion = async (moduleTitle: string) => {
 };
 
 export const saveQuizScore = async (score: number) => {
-  const user = auth.currentUser;
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
 
-  const userRef = doc(db, 'users', user.uid);
+  const userRef = doc(db, 'users', user.id);
   await updateDoc(userRef, {
     quizScores: arrayUnion(score),
     totalPoints: increment(score * 5)
@@ -57,11 +60,12 @@ export const saveQuizScore = async (score: number) => {
 };
 
 export const earnBadge = async (badgeId: string) => {
-  const user = auth.currentUser;
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
 
-  const userRef = doc(db, 'users', user.uid);
+  const userRef = doc(db, 'users', user.id);
   await updateDoc(userRef, {
     badges: arrayUnion(badgeId)
   });
 };
+
