@@ -22,8 +22,9 @@ interface SpeechRecognition extends EventTarget {
   interimResults: boolean;
   lang: string;
   onresult: (event: SpeechRecognitionEvent) => void;
-  onerror: (event: any) => void;
+  onerror: (event: { error: string }) => void;
   onend: () => void;
+
   start: () => void;
   stop: () => void;
 }
@@ -289,12 +290,13 @@ const Assistant: React.FC = () => {
           <div className="header-status-badges" style={{ display: 'flex', gap: '0.75rem' }}>
             <div className={`aura-online-status ${isOnline ? 'online' : 'offline'}`}>
               <div className="aura-status-dot"></div>
-              <span>{isOnline ? 'Online' : 'Offline'}</span>
+              <span>{isOnline ? 'Network: Online' : 'Network: Offline'}</span>
             </div>
             <div className={`aura-online-status ${isOnline ? 'online' : (isEngineReady ? 'online' : 'offline')}`}>
               <div className="aura-status-dot"></div>
-              <span>{isOnline ? 'Gemini AI' : (isEngineReady ? 'Gemma (Offline)' : 'Cloud Only')}</span>
+              <span>{isOnline ? 'Active: Gemini (Cloud)' : (isEngineReady ? 'Active: Gemma (Local)' : 'Status: Cloud Only')}</span>
             </div>
+
           </div>
 
         </header>

@@ -21,21 +21,34 @@ const DEFAULT_PROGRESS: UserProgress = {
 };
 
 export const getUserProgress = async (): Promise<UserProgress> => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return DEFAULT_PROGRESS;
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return DEFAULT_PROGRESS;
 
-  // We are still using Firestore for data storage for now, but using Supabase for Auth
-  // We'll map Supabase user.id to Firestore document ID
-  const userRef = doc(db, 'users', user.id);
-  const userSnap = await getDoc(userRef);
+    if (!db) {
+      console.warn("Firestore not initialized");
+      return DEFAULT_PROGRESS;
+    }
 
-  if (userSnap.exists()) {
-    return userSnap.data() as UserProgress;
-  } else {
-    await setDoc(userRef, DEFAULT_PROGRESS);
+    const userRef = doc(db, 'users', user.id);
+    const userSnap = await getDoc(userRef);
+
+    if (userSnap.exists()) {
+      const data = userSnap.data();
+      return {
+        ...DEFAULT_PROGRESS,
+        ...data
+      } as UserProgress;
+    } else {
+      await setDoc(userRef, DEFAULT_PROGRESS);
+      return DEFAULT_PROGRESS;
+    }
+  } catch (error) {
+    console.error("Error fetching user progress:", error);
     return DEFAULT_PROGRESS;
   }
 };
+
 
 export const updateModuleCompletion = async (moduleTitle: string) => {
   const { data: { user } } = await supabase.auth.getUser();

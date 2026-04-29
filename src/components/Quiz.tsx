@@ -63,7 +63,12 @@ const Quiz: React.FC<QuizProps> = ({ topic = "Elections", onClose }) => {
     setSelectedOption(option);
     const correct = option === questions[currentStep].answer;
     setIsCorrect(correct);
-    if (correct) setScore(prev => prev + 1);
+    
+    // Use functional update to ensure we have the latest score when calculating final results
+    if (correct) {
+      setScore(prev => prev + 1);
+    }
+
 
     setTimeout(() => {
       if (currentStep < questions.length - 1) {
@@ -71,11 +76,16 @@ const Quiz: React.FC<QuizProps> = ({ topic = "Elections", onClose }) => {
         setSelectedOption(null);
         setIsCorrect(null);
       } else {
+        // Use a small delay to ensure score state has settled if possible, 
+        // though setScore is async, we use the local 'correct' variable for final update
         const finalScore = score + (correct ? 1 : 0);
         saveQuizScore(finalScore);
-        if (finalScore === questions.length) earnBadge('quiz_master');
+        if (finalScore === questions.length && questions.length > 0) {
+          earnBadge('quiz_master');
+        }
         setShowResult(true);
       }
+
     }, 1500);
   };
 

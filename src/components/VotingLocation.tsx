@@ -23,7 +23,8 @@ const VotingLocation: React.FC = () => {
     }
   }, []);
 
-  const mapUrl = `https://www.google.com/maps/embed/v1/place?key=${import.meta.env.Maps_Paltform_API_Key}&q=${coords.lat},${coords.lng}&zoom=14`;
+  const mapUrl = `https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_MAPS_API_KEY}&q=${coords.lat},${coords.lng}&zoom=14`;
+
 
   return (
     <div className="location-card glass-card" role="region" aria-label="Voting Location Information">

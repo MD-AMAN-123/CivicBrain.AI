@@ -9,16 +9,33 @@ import { getUserProgress, type UserProgress } from '../services/userService';
 const Dashboard: React.FC = () => {
   const [showQuiz, setShowQuiz] = useState(false);
   const [progress, setProgress] = useState<UserProgress | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getUserProgress().then(setProgress);
+    getUserProgress()
+      .then(setProgress)
+      .catch(err => console.error("Dashboard load error:", err))
+      .finally(() => setLoading(false));
   }, []);
+
+  if (loading) {
+    return (
+      <div className="flex-center" style={{ height: '60vh' }}>
+        <div className="spinner-small" />
+        <span style={{ marginLeft: '1rem', color: 'var(--text-dim)' }}>Loading your dashboard...</span>
+      </div>
+    );
+  }
 
   const progressData = {
     labels: ['Completed', 'In Progress', 'Locked'],
     datasets: [
       {
-        data: [65, 20, 15],
+        data: [
+          progress?.completedModules?.length || 0,
+          2, // Mock in progress
+          Math.max(0, 18 - (progress?.completedModules?.length || 0))
+        ],
         backgroundColor: ['#6366f1', '#a855f7', '#1e1b4b'],
         borderWidth: 0,
       },
@@ -49,8 +66,8 @@ const Dashboard: React.FC = () => {
             <BookOpen className="stat-icon" />
             <span>Modules Done</span>
           </div>
-          <div className="stat-value">{progress?.completedModules.length || 0} / 20</div>
-          <div className="stat-footer text-green">+{progress?.completedModules.length || 0} total</div>
+          <div className="stat-value">{(progress?.completedModules || []).length} / 20</div>
+          <div className="stat-footer text-green">+{(progress?.completedModules || []).length} total</div>
         </div>
         <div className="stat-card glass-card">
           <div className="stat-header">
@@ -66,11 +83,11 @@ const Dashboard: React.FC = () => {
             <span>Avg Quiz Score</span>
           </div>
           <div className="stat-value">
-            {progress?.quizScores.length
+            {progress?.quizScores?.length
               ? Math.round((progress.quizScores.reduce((a, b) => a + b, 0) / (progress.quizScores.length * 3)) * 100)
               : 0}%
           </div>
-          <div className="stat-footer text-purple">{progress?.quizScores.length || 0} Quizzes taken</div>
+          <div className="stat-footer text-purple">{(progress?.quizScores || []).length} Quizzes taken</div>
         </div>
         <div className="stat-card glass-card">
           <div className="stat-header">
@@ -78,7 +95,7 @@ const Dashboard: React.FC = () => {
             <span>Rank</span>
           </div>
           <div className="stat-value">{(progress?.totalPoints || 0) > 100 ? "Civic Pro" : "Beginner"}</div>
-          <div className="stat-footer">{progress?.badges.length || 0} Badges earned</div>
+          <div className="stat-footer">{(progress?.badges || []).length} Badges earned</div>
         </div>
       </div>
 
@@ -104,7 +121,7 @@ const Dashboard: React.FC = () => {
       <div className="badges-section">
         <h3>Achievements & <span className="text-gradient">Badges</span></h3>
         <div className="badges-grid">
-          <div className={`badge-card glass-card ${progress?.completedModules.length ? 'earned' : ''}`}>
+          <div className={`badge-card glass-card ${(progress?.completedModules || []).length ? 'earned' : ''}`}>
             <div className="badge-icon">🗳️</div>
             <span>Smart Voter</span>
           </div>
@@ -112,7 +129,7 @@ const Dashboard: React.FC = () => {
             <div className="badge-icon">🔥</div>
             <span>Streak</span>
           </div>
-          <div className={`badge-card glass-card ${progress?.badges.includes('quiz_master') ? 'earned' : ''}`}>
+          <div className={`badge-card glass-card ${(progress?.badges || []).includes('quiz_master') ? 'earned' : ''}`}>
             <div className="badge-icon">🧠</div>
             <span>Quiz Master</span>
           </div>
@@ -143,6 +160,7 @@ const Dashboard: React.FC = () => {
       <style dangerouslySetInnerHTML={{
         __html: `
         .dashboard-view {
+
           display: flex;
           flex-direction: column;
           gap: 2rem;
