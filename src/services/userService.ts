@@ -1,4 +1,4 @@
-import { db, auth } from './firebase';
+import { db } from './firebase';
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, increment } from 'firebase/firestore';
 import { supabase } from '../lib/supabase';
 
