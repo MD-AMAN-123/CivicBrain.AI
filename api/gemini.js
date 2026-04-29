@@ -2,8 +2,17 @@ export default async function handler(req, res) {
   try {
     const { message } = req.body;
 
+    const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+
+    if (!apiKey) {
+      return res.status(500).json({ 
+        reply: "⚠️ Gemini API Key is missing on the server. Please check your Vercel Environment Variables." 
+      });
+    }
+
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+
       {
         method: "POST",
         headers: {

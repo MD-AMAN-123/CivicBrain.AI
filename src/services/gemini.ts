@@ -14,44 +14,62 @@ interface QuizQuestion {
 
 export const explainConcept = async (params: ExplainParams): Promise<string> => {
   const { topic, level, onStream } = params;
-  
+
+  // Create an AbortController to handle timeouts
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
   try {
     const response = await fetch('/api/gemini', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ 
-        message: `System: You are CivicBrain AI, an expert on elections. Level: ${level}\nUser: ${topic}` 
+      signal: controller.signal,
+      body: JSON.stringify({
+        message: `System: You are CivicBrain AI, an expert on elections. Explain concepts simply. Level: ${level}\nUser: ${topic}`
       }),
     });
 
-    const data = await response.json();
-    
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
-      return data.reply || `⚠️ Server error (${response.status})`;
+      const errorText = await response.text();
+      let errorData;
+      try { errorData = JSON.parse(errorText); } catch { errorData = { reply: errorText }; }
+
+      const errMsg = errorData.reply || `⚠️ Server error (${response.status})`;
+      if (onStream) onStream(errMsg);
+      return errMsg;
     }
-    
+
+    const data = await response.json();
+
     if (!data.reply) {
-      return "⚠️ Received empty response from AI.";
+      const errMsg = "⚠️ Received empty response from AI.";
+      if (onStream) onStream(errMsg);
+      return errMsg;
     }
-    
+
     if (onStream) {
       onStream(data.reply);
     }
-    
+
     return data.reply;
   } catch (err: unknown) {
+    clearTimeout(timeoutId);
     const error = err instanceof Error ? err : new Error(String(err));
     console.error("Gemini Error:", error);
-    const msg = error.name === 'AbortError' 
-      ? "⚠️ Request timed out." 
-      : `⚠️ Connection failed. Check your internet.`;
+
+    const msg = error.name === 'AbortError'
+      ? "⚠️ Request timed out. The AI is taking too long to respond."
+      : `⚠️ Connection failed. Please check your internet or Vercel logs.`;
 
     if (onStream) onStream(msg);
     return msg;
   }
 };
+
 
 // Removed deprecated streaming and fallback functions
 

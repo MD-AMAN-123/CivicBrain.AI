@@ -246,7 +246,8 @@ const Assistant: React.FC = () => {
     } finally {
       setIsTyping(false);
     }
-  }, [input, isTyping, isInitializing, engine, isEngineReady, messages, isOnline]);
+  }, [input, isTyping, isInitializing, engine, isEngineReady, isOnline]);
+
 
 
   useEffect(() => {
