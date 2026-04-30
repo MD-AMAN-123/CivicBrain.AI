@@ -27,3 +27,5 @@ scratch/
 *.njsproj
 *.sln
 *.sw?
+
+.vercel

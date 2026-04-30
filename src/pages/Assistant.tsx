@@ -60,6 +60,7 @@ const Assistant: React.FC = () => {
   const [progress, setProgress] = useState(0);
   const [initText, setInitText] = useState("Initializing Local Brain...");
   const [isEngineReady, setIsEngineReady] = useState(false);
+  const [isLocalMode, setIsLocalMode] = useState(false); // New state for explicit toggle
 
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isListening, setIsListening] = useState(false);
@@ -118,6 +119,8 @@ const Assistant: React.FC = () => {
   useEffect(() => {
     let active = true;
     const initEngine = async () => {
+      if (isEngineReady || engine) return; // Don't re-init if already ready
+      
       // Check for WebGPU support before trying local engine
       if (!('gpu' in navigator)) {
         console.log("WebGPU not supported, skipping local engine.");
@@ -160,9 +163,11 @@ const Assistant: React.FC = () => {
     };
 
     // Only show the blocking initialization screen if the user is offline 
-    // and needs the local model to function.
-    if (!isOnline) {
-      setIsInitializing(true);
+    // OR if they have explicitly enabled Local Mode and the engine isn't ready.
+    if (!isOnline || isLocalMode) {
+      if (!isEngineReady) {
+        setIsInitializing(true);
+      }
     }
 
     initEngine();
@@ -171,7 +176,7 @@ const Assistant: React.FC = () => {
     return () => {
       active = false;
     };
-  }, []);
+  }, [isLocalMode]); // Re-run or check when mode changes
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -203,8 +208,8 @@ const Assistant: React.FC = () => {
     setMessages(prev => [...prev, initialAiMsg]);
 
     try {
-      if (isOnline) {
-        // Primary: Use Gemini Cloud API when online
+      if (isOnline && !isLocalMode) {
+        // Primary: Use Gemini Cloud API when online and not in local mode
         let fullText = "";
         await explainConcept({
           topic: textToSend,
@@ -270,7 +275,7 @@ const Assistant: React.FC = () => {
     } finally {
       setIsTyping(false);
     }
-  }, [input, isTyping, isInitializing, engine, isEngineReady, isOnline]);
+  }, [input, isTyping, isInitializing, engine, isEngineReady, isOnline, isLocalMode]);
 
 
 
@@ -327,14 +332,28 @@ const Assistant: React.FC = () => {
             <Bot size={24} className="text-gradient" />
             <span>CivicBrain Aura</span>
           </div>
-          <div className="header-status-badges" style={{ display: 'flex', gap: '0.75rem' }}>
+          <div className="header-status-badges" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+            {/* New Offline Toggle */}
+            <div 
+              className={`aura-offline-toggle ${isLocalMode ? 'active' : ''}`}
+              onClick={() => setIsLocalMode(!isLocalMode)}
+              title={isLocalMode ? "Switch to Cloud AI" : "Switch to Local AI (Works Offline)"}
+            >
+              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: isLocalMode ? '#fff' : 'var(--text-dim)' }}>
+                Offline Mode
+              </span>
+              <div className="toggle-switch">
+                <div className="toggle-slider"></div>
+              </div>
+            </div>
+
             <div className={`aura-online-status ${isOnline ? 'online' : 'offline'}`}>
               <div className="aura-status-dot"></div>
               <span>{isOnline ? 'Network: Online' : 'Network: Offline'}</span>
             </div>
-            <div className={`aura-online-status ${isOnline ? 'online' : (isEngineReady ? 'online' : 'offline')}`}>
+            <div className={`aura-online-status ${(isOnline && !isLocalMode) ? 'online' : (isEngineReady ? 'online' : 'offline')}`}>
               <div className="aura-status-dot"></div>
-              <span>{isOnline ? 'Active: Gemini (Cloud)' : (isEngineReady ? 'Active: Gemma (Local)' : 'Status: Cloud Only')}</span>
+              <span>{(isOnline && !isLocalMode) ? 'Active: Gemini (Cloud)' : (isEngineReady ? 'Active: Gemma (Local)' : 'Status: Cloud Only')}</span>
             </div>
 
           </div>
