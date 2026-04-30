@@ -10,7 +10,17 @@
       "source": "/manifest.webmanifest",
       "headers": [
         { "key": "Content-Type", "value": "application/manifest+json" },
-        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Credentials", "value": "true" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
+        { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version" }
       ]
     }
   ],
@@ -20,7 +30,11 @@
       "destination": "/api/$1"
     },
     {
-      "source": "/(.*)",
+      "source": "/manifest.webmanifest",
+      "destination": "/manifest.webmanifest"
+    },
+    {
+      "source": "/((?!api/|manifest.webmanifest|_vercel/).*)",
       "destination": "/index.html"
     }
   ]
