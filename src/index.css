@@ -925,12 +925,14 @@ body {
 /* --- Responsive Adjustments for AI Assistant --- */
 @media (max-width: 768px) {
   .aura-assistant-view {
-    padding: 0 0.5rem 0.5rem 0.5rem;
+    padding: 0;
+    margin: 0 -1rem; /* Negative margin to pull to edges of .content-viewport */
+    width: calc(100% + 2rem);
   }
 
   .aura-chat-container {
-    height: calc(100vh - 180px); /* Adjust based on sidebar/topbar presence */
-    border-radius: 1rem;
+    height: calc(100vh - 120px); 
+    border-radius: 0; /* Full edge-to-edge on mobile */
   }
 
   .aura-app-header {
