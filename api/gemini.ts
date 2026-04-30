@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 export default async function handler(req: any, res: any) {
   // Only allow POST
   if (req.method !== "POST") {
-    return res.status(405).json({ reply: "Method Not Allowed" });
+    return res.status(405).json({ reply: "Only POST requests allowed" });
   }
 
   try {
@@ -13,40 +13,35 @@ export default async function handler(req: any, res: any) {
       return res.status(400).json({ reply: "⚠️ Message is required" });
     }
 
+    // ✅ Load API key from Vercel env
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
-      console.error("❌ Missing GEMINI_API_KEY");
+      console.error("❌ ERROR: GEMINI_API_KEY is missing");
       return res.status(500).json({
-        reply: "⚠️ Server misconfigured (API key missing)",
+        reply: "⚠️ Server misconfiguration (API key missing)",
       });
     }
 
-    console.log("✅ API key found");
+    console.log("✅ API KEY DETECTED");
 
+    // ✅ Initialize Gemini SDK
     const genAI = new GoogleGenerativeAI(apiKey);
 
-    // 🔥 Use stable model (DO NOT change unless needed)
+    // 🔥 Use most stable model
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-pro",
+      model: "gemini-pro",
     });
 
-    console.log("✅ Using model: gemini-1.5-pro");
+    console.log("✅ Using model: gemini-pro");
 
-    // ✅ FIX: correct request format (THIS WAS YOUR MAIN BUG)
-    const result = await model.generateContent({
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: message }],
-        },
-      ],
-    });
+    // ✅ Generate response (simple & reliable format)
+    const result = await model.generateContent(message);
 
-    const response = await result.response;
+    const response = result.response;
     const text = response.text();
 
-    console.log("✅ Gemini responded");
+    console.log("✅ Gemini response received");
 
     if (!text) {
       return res.status(200).json({
@@ -54,13 +49,15 @@ export default async function handler(req: any, res: any) {
       });
     }
 
-    return res.status(200).json({ reply: text });
+    return res.status(200).json({
+      reply: text,
+    });
 
   } catch (error: any) {
-    console.error("🔥 Gemini FULL ERROR:", error);
+    console.error("🔥 FULL GEMINI ERROR:", error);
 
     return res.status(500).json({
-      reply: "⚠️ AI failed. Check Vercel logs.",
+      reply: "⚠️ AI failed to respond. Check Vercel logs.",
       error: error?.message || "Unknown error",
     });
   }
