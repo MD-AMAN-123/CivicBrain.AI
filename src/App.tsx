@@ -72,25 +72,17 @@ const App: React.FC = () => {
     if (e.key === 'Enter' && searchTerm.trim()) {
       const term = searchTerm.toLowerCase().trim();
       
-      // Full App Command Registry
-      const commands = [
-        { keywords: ['home', 'start', 'news', 'main'], path: '/' },
-        { keywords: ['dashboard', 'stats', 'progress', 'profile', 'account', 'level', 'xp'], path: '/dashboard' },
-        { keywords: ['process', 'timeline', 'guide', 'quiz', 'register', 'vote', 'card', 'step'], path: '/timeline' },
-        { keywords: ['admin', 'panel', 'settings', 'manage', 'config'], path: '/admin' },
-        { keywords: ['assistant', 'aura', 'chat', 'help', 'ask', 'ai'], path: '/assistant' },
-        { keywords: ['login', 'signin', 'signup', 'join', 'become'], path: '/login' },
-        { keywords: ['logout', 'signout', 'exit'], action: handleLogout },
-      ];
-
-      // Find first command that matches any keyword
-      const match = commands.find(cmd => 
-        cmd.keywords.some(keyword => term.includes(keyword))
-      );
-
-      if (match) {
-        if (match.path) navigate(match.path);
-        if (match.action) match.action();
+      // Smart Navigation Logic
+      if (term === 'home') {
+        navigate('/');
+      } else if (term === 'dashboard' || term === 'stats') {
+        navigate('/dashboard');
+      } else if (term.includes('process') || term.includes('timeline') || term.includes('guide') || term.includes('quiz')) {
+        navigate('/timeline');
+      } else if (term.includes('admin') || term.includes('settings')) {
+        navigate('/admin');
+      } else if (term === 'assistant' || term === 'aura' || term === 'chat') {
+        navigate('/assistant');
       } else {
         // Fallback to Assistant for general queries
         navigate('/assistant', { state: { prompt: searchTerm } });
