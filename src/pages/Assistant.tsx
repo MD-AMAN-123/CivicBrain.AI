@@ -154,8 +154,9 @@ const Assistant: React.FC = () => {
         console.error("Local init error:", err);
         if (active) {
           setIsEngineReady(false);
-          setIsInitializing(false);
-          setInitText(`Error: ${err instanceof Error ? err.message : "Initialization failed"}`);
+          // Keep initialization screen visible so user can see the error
+          setIsInitializing(true); 
+          setInitText(`Setup Failed: ${err instanceof Error ? err.message : "You need internet for the first-time setup."}`);
         }
       }
 
@@ -298,7 +299,7 @@ const Assistant: React.FC = () => {
   return (
     <div className="assistant-view aura-assistant-view">
       <div className="aura-chat-container">
-        {isInitializing && !isOnline && (
+        {isInitializing && (
           <div className="aura-init-screen">
             <div className="aura-spinner"></div>
             <div className="aura-welcome-box">
