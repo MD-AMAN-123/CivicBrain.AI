@@ -17,12 +17,10 @@ export default async function handler(req: any, res: any) {
 
     // Updated for 2026: Ultra-resilient fallback chain
     const attempts = [
-      { v: "v1beta", m: "gemini-2.0-flash-exp" },
-      { v: "v1beta", m: "gemini-2.0-flash" },
       { v: "v1beta", m: "gemini-1.5-flash" },
-      { v: "v1beta", m: "gemini-1.5-flash-8b" },
       { v: "v1", m: "gemini-1.5-flash" },
-      { v: "v1beta", m: "gemini-pro" } // Changed v1 to v1beta for better compatibility
+      { v: "v1", m: "gemini-pro" },
+      { v: "v1beta", m: "gemini-1.5-pro" }
     ];
 
     let lastError = "";
