@@ -1,6 +1,6 @@
 import React, { Suspense, lazy, useEffect, useState } from 'react';
 import './App.css';
-import { Routes, Route, Link, useNavigate } from 'react-router-dom';
+import { Routes, Route, Link, useNavigate, Navigate } from 'react-router-dom';
 import { Home, LayoutDashboard, History, MessageSquare, Settings, User, ShieldCheck, LogOut } from 'lucide-react';
 import { supabase } from './lib/supabase';
 
@@ -40,6 +40,14 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
     return this.props.children;
   }
 }
+
+// Protected Route Component
+const ProtectedRoute: React.FC<{ children: React.ReactNode; user: any }> = ({ children, user }) => {
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  return <>{children}</>;
+};
 
 const App: React.FC = () => {
   const navigate = useNavigate();
@@ -148,11 +156,13 @@ const App: React.FC = () => {
             <Suspense fallback={<div className="flex-center loading-screen">Loading...</div>}>
               <Routes>
                 <Route path="/" element={<HomeView />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/timeline" element={<Timeline />} />
-                <Route path="/assistant" element={<Assistant />} />
-                <Route path="/admin" element={<Admin />} />
                 <Route path="/login" element={<Login />} />
+                
+                {/* Protected Routes */}
+                <Route path="/dashboard" element={<ProtectedRoute user={user}><Dashboard /></ProtectedRoute>} />
+                <Route path="/timeline" element={<ProtectedRoute user={user}><Timeline /></ProtectedRoute>} />
+                <Route path="/assistant" element={<ProtectedRoute user={user}><Assistant /></ProtectedRoute>} />
+                <Route path="/admin" element={<ProtectedRoute user={user}><Admin /></ProtectedRoute>} />
               </Routes>
             </Suspense>
           </ErrorBoundary>
