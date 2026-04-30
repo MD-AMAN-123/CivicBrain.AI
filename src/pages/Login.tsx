@@ -38,7 +38,7 @@ const Login: React.FC = () => {
         if (signUpError) throw signUpError;
       }
 
-      navigate('/dashboard');
+      navigate('/assistant');
     } catch (err: unknown) {
       const authError = err as { message?: string };
       console.error('Authentication error:', authError);

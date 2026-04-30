@@ -120,7 +120,7 @@ const Assistant: React.FC = () => {
     let active = true;
     const initEngine = async () => {
       if (isEngineReady || engine) return; // Don't re-init if already ready
-      
+
       // Check for WebGPU support before trying local engine
       if (!('gpu' in navigator)) {
         console.log("WebGPU not supported, skipping local engine.");
@@ -259,7 +259,7 @@ const Assistant: React.FC = () => {
         } else {
           errorMessage = "I'm offline and still loading my local brain. Please check your internet connection or wait a moment!";
         }
-        
+
         setMessages(prev => prev.map(msg =>
           msg.id === aiMsgId ? { ...msg, text: errorMessage } : msg
         ));
@@ -313,8 +313,8 @@ const Assistant: React.FC = () => {
                 </button>
               </div>
               <p style={{ fontSize: '0.8rem', opacity: 0.6, marginTop: '1.5rem', maxWidth: '300px' }}>
-                {!('gpu' in navigator) 
-                  ? "⚠️ Your browser/device doesn't support WebGPU. Internet is required." 
+                {!('gpu' in navigator)
+                  ? "⚠️ Your browser/device doesn't support WebGPU. Internet is required."
                   : "Loading my local brain can take a few minutes on the first visit."}
               </p>
             </div>
@@ -334,7 +334,7 @@ const Assistant: React.FC = () => {
           </div>
           <div className="header-status-badges" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
             {/* New Offline Toggle */}
-            <div 
+            <div
               className={`aura-offline-toggle ${isLocalMode ? 'active' : ''}`}
               onClick={() => setIsLocalMode(!isLocalMode)}
               title={isLocalMode ? "Switch to Cloud AI" : "Switch to Local AI (Works Offline)"}
