@@ -1,3 +1,5 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
 export default async function handler(req: any, res: any) {
   // Allow only POST requests
   if (req.method !== 'POST') {
@@ -20,51 +22,46 @@ export default async function handler(req: any, res: any) {
       });
     }
 
-    // DEBUG LOGS (Vercel Functions tab)
-    console.log('Using Model: gemini-pro');
-    console.log('API Version: v1beta');
+    // Initialize the SDK
+    const genAI = new GoogleGenerativeAI(API_KEY);
+    
+    // Use gemini-1.5-flash (most reliable/fastest)
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-    // ✅ Guaranteed working Gemini API call
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: message,
-                },
-              ],
-            },
-          ],
-        }),
-      }
-    );
+    console.log('Using @google/generative-ai SDK with gemini-1.5-flash');
 
-    const data = await response.json();
+    const result = await model.generateContent(message);
+    const response = await result.response;
+    const text = response.text();
 
-    // Debug logging for Gemini Response
-    console.log('Gemini raw response status:', response.status);
-    if (!response.ok) {
-      console.error('Gemini API Error Data:', JSON.stringify(data));
+    if (!text) {
+      return res.status(200).json({ reply: '⚠️ AI returned an empty response.' });
     }
 
-    const reply =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      data?.error?.message ||
-      '⚠️ No response from AI';
-
-    return res.status(200).json({ reply });
+    return res.status(200).json({ reply: text });
   } catch (error: any) {
-    console.error('CRITICAL Gemini API ERROR:', error.message);
+    console.error('Gemini SDK ERROR:', error.message);
+    
+    // Handle common errors
+    if (error.message.includes('API key not valid')) {
+      return res.status(401).json({ reply: '⚠️ Invalid API Key. Please check your Vercel settings.' });
+    }
+    if (error.message.includes('model not found')) {
+      // Fallback to gemini-pro if flash fails
+      try {
+        console.log('Falling back to gemini-pro...');
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+        const result = await model.generateContent(req.body.message);
+        const response = await result.response;
+        return res.status(200).json({ reply: response.text() });
+      } catch (fallbackError: any) {
+        return res.status(500).json({ reply: `⚠️ Both models failed. Error: ${fallbackError.message}` });
+      }
+    }
 
     return res.status(500).json({
-      reply: '⚠️ Server error while connecting to AI',
+      reply: `⚠️ AI Error: ${error.message}`,
     });
   }
 }
