@@ -70,24 +70,7 @@ const App: React.FC = () => {
 
   const handleSearch = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && searchTerm.trim()) {
-      const term = searchTerm.toLowerCase().trim();
-      
-      // Smart Navigation Logic
-      if (term === 'home') {
-        navigate('/');
-      } else if (term === 'dashboard' || term === 'stats') {
-        navigate('/dashboard');
-      } else if (term.includes('process') || term.includes('timeline') || term.includes('guide') || term.includes('quiz')) {
-        navigate('/timeline');
-      } else if (term.includes('admin') || term.includes('settings')) {
-        navigate('/admin');
-      } else if (term === 'assistant' || term === 'aura' || term === 'chat') {
-        navigate('/assistant');
-      } else {
-        // Fallback to Assistant for general queries
-        navigate('/assistant', { state: { prompt: searchTerm } });
-      }
-      
+      navigate('/assistant', { state: { prompt: searchTerm } });
       setSearchTerm('');
     }
   };
@@ -149,7 +132,7 @@ const App: React.FC = () => {
           <div className="search-bar glass-card">
             <input
               type="text"
-              placeholder="Search for pages (Dashboard, Quiz...) or ask Aura..."
+              placeholder="Explore election topics..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={handleSearch}
