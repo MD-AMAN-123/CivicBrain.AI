@@ -78,7 +78,7 @@ const App: React.FC = () => {
         { keywords: ['dashboard', 'stats', 'progress', 'profile', 'account', 'level', 'xp'], path: '/dashboard' },
         { keywords: ['process', 'timeline', 'guide', 'quiz', 'register', 'vote', 'card', 'step'], path: '/timeline' },
         { keywords: ['admin', 'panel', 'settings', 'manage', 'config'], path: '/admin' },
-        { keywords: ['assistant', 'aura', 'chat', 'help', 'ask', 'ai', 'demo'], path: '/assistant' },
+        { keywords: ['assistant', 'aura', 'chat', 'help', 'ask', 'ai'], path: '/assistant' },
         { keywords: ['login', 'signin', 'signup', 'join', 'become'], path: '/login' },
         { keywords: ['logout', 'signout', 'exit'], action: handleLogout },
       ];

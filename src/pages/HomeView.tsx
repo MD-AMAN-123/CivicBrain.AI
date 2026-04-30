@@ -24,7 +24,7 @@ const HomeView: React.FC = () => {
           <button className="btn-primary flex-center gap-2" onClick={() => navigate('/timeline')}>
             Start Your Journey <ArrowRight size={20} />
           </button>
-          <button className="btn-outline" onClick={() => navigate('/assistant')}>Watch Demo</button>
+          <button className="btn-outline">Watch Demo</button>
         </div>
       </section>
 
