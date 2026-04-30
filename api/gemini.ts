@@ -16,14 +16,14 @@ export default async function handler(req: any, res: any) {
     };
 
     // Updated for 2026: Ultra-resilient fallback chain
-    // Updated for 2026: The "Exactly Same" 6-Layer Fallback Chain
+    // Verified 2026 Model List for this specific API Key
     const attempts = [
       { v: "v1beta", m: "gemini-2.5-flash" },
+      { v: "v1beta", m: "gemini-flash-latest" },
+      { v: "v1beta", m: "gemini-2.0-flash-lite" },
       { v: "v1beta", m: "gemini-2.0-flash" },
-      { v: "v1beta", m: "gemini-1.5-flash" },
-      { v: "v1beta", m: "gemini-1.5-pro" },
-      { v: "v1", m: "gemini-pro" },
-      { v: "v1", m: "gemini-1.0-pro" }
+      { v: "v1beta", m: "gemini-pro-latest" },
+      { v: "v1beta", m: "gemini-2.0-flash-001" }
     ];
 
     let lastError = "";
