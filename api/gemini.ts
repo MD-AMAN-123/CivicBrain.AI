@@ -1,7 +1,5 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
 export default async function handler(req: any, res: any) {
-  // Only allow POST
+  // 1. Only allow POST
   if (req.method !== "POST") {
     return res.status(405).json({ reply: "Only POST requests allowed" });
   }
@@ -9,64 +7,82 @@ export default async function handler(req: any, res: any) {
   try {
     const { message } = req.body;
 
-    if (!message || typeof message !== "string") {
+    if (!message) {
       return res.status(400).json({ reply: "⚠️ Message is required" });
     }
 
-    // ✅ Load API key from Vercel env
-    const apiKey = process.env.GEMINI_API_KEY;
-
-    if (!apiKey) {
-      console.error("❌ ERROR: GEMINI_API_KEY is missing from environment variables");
+    // 2. Load and sanitize API key
+    const rawKey = process.env.GEMINI_API_KEY;
+    if (!rawKey) {
+      console.error("❌ MISSING: GEMINI_API_KEY is not set in Vercel environment.");
       return res.status(500).json({
-        reply: "⚠️ Server misconfiguration: GEMINI_API_KEY is not set in Vercel settings.",
+        reply: "⚠️ Server error: API key missing. Please set GEMINI_API_KEY in Vercel settings.",
       });
     }
 
-    // Safely log key presence (first 4 and last 4 chars)
-    console.log(`✅ API KEY DETECTED: ${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}`);
+    const apiKey = rawKey.trim();
+    console.log(`✅ KEY DETECTED (Len: ${apiKey.length}): ${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}`);
 
-    // ✅ Initialize Gemini SDK
-    const genAI = new GoogleGenerativeAI(apiKey);
+    // 3. Manual Fetch to Gemini REST API (v1beta)
+    // Using manual fetch bypasses any potential SDK issues in the serverless environment
+    console.log("🚀 Calling Gemini REST API (v1beta)...");
+    
+    const geminiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: message,
+                },
+              ],
+            },
+          ],
+        }),
+      }
+    );
 
-    // 🔥 Switch to gemini-1.5-flash for maximum compatibility and speed
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
-    });
+    const data = await geminiResponse.json();
 
-    console.log("✅ Using model: gemini-1.5-flash");
+    if (!geminiResponse.ok) {
+      console.error("🔥 GEMINI API ERROR:", JSON.stringify(data));
+      
+      const errorMsg = data.error?.message || "Unknown API Error";
+      const statusCode = geminiResponse.status;
 
-    // ✅ Generate response
-    const result = await model.generateContent(message);
-    const response = result.response;
-    const text = response.text();
+      if (errorMsg.includes("API key not valid")) {
+        return res.status(401).json({ reply: "⚠️ The API Key provided is invalid. Please get a fresh key from AI Studio." });
+      }
 
-    console.log("✅ Gemini response received successfully");
+      return res.status(statusCode).json({
+        reply: `⚠️ AI Error (${statusCode}): ${errorMsg}`,
+      });
+    }
 
-    if (!text) {
+    // 4. Extract Text
+    const aiText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!aiText) {
+      console.error("⚠️ EMPTY RESPONSE FROM GEMINI:", JSON.stringify(data));
       return res.status(200).json({
-        reply: "⚠️ AI returned an empty response. Please try again.",
+        reply: "⚠️ AI returned no content. Please try a different question.",
       });
     }
 
-    return res.status(200).json({
-      reply: text,
-    });
+    console.log("✅ SUCCESS: Gemini responded successfully.");
+    return res.status(200).json({ reply: aiText });
 
   } catch (error: any) {
-    console.error("🔥 FULL GEMINI ERROR:", error);
-    
-    let errorMessage = "⚠️ AI failed to respond. Please check your internet or retry later.";
-    
-    if (error.message?.includes("API_KEY_INVALID")) {
-      errorMessage = "⚠️ Invalid Gemini API Key. Please update it in Vercel settings.";
-    } else if (error.message?.includes("model not found")) {
-      errorMessage = "⚠️ Selected Gemini model is not available for this API key.";
-    }
-
+    console.error("🔥 CRITICAL SERVER ERROR:", error);
     return res.status(500).json({
-      reply: errorMessage,
-      error: error?.message || "Unknown error",
+      reply: "⚠️ Connection failed. Check your Vercel logs or your API Key status.",
+      error: error.message,
     });
   }
 }
