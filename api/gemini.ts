@@ -1,3 +1,5 @@
+export const maxDuration = 60; // Increase timeout to 60 seconds
+
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") return res.status(405).json({ reply: "Only POST allowed" });
 
@@ -15,12 +17,12 @@ export default async function handler(req: any, res: any) {
       generationConfig: { temperature: 0.7, maxOutputTokens: 2000 }
     };
 
-    // Updated for 2026: Trying newest models first (gemini-2.5, gemini-2.0)
+    // Updated for 2026: Fast models first. 
+    // Note: gemini-2.5-flash is currently in ultra-high demand, falling back to 2.0 or 1.5 if slow.
     const attempts = [
-      { v: "v1beta", m: "gemini-2.5-flash" },
       { v: "v1beta", m: "gemini-2.0-flash" },
       { v: "v1beta", m: "gemini-1.5-flash" },
-      { v: "v1", m: "gemini-pro" }
+      { v: "v1", m: "gemini-1.5-flash" }
     ];
 
     let lastError = "";
