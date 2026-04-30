@@ -17,6 +17,7 @@
     "@react-three/fiber": "^9.6.0",
     "@supabase/supabase-js": "^2.105.1",
     "@types/three": "^0.184.0",
+    "@vercel/node": "^5.7.13",
     "chart.js": "^4.5.1",
     "firebase": "^12.12.1",
     "framer-motion": "^12.38.0",
