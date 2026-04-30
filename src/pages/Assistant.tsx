@@ -37,6 +37,7 @@ interface Message {
   text: string;
   sender: 'user' | 'ai';
   timestamp: Date;
+  isError?: boolean;
 }
 
 const SELECTED_MODEL = "gemma-2b-it-q4f32_1-MLC"; // Or any fast model
@@ -262,7 +263,7 @@ const Assistant: React.FC = () => {
         }
 
         setMessages(prev => prev.map(msg =>
-          msg.id === aiMsgId ? { ...msg, text: errorMessage } : msg
+          msg.id === aiMsgId ? { ...msg, text: errorMessage, isError: true } : msg
         ));
       }
 
@@ -271,7 +272,7 @@ const Assistant: React.FC = () => {
       console.error("Gemini Error:", error);
 
       setMessages(prev => prev.map(msg =>
-        msg.id === aiMsgId ? { ...msg, text: "I'm having trouble connecting to my brain right now. Please try again in a moment!" } : msg
+        msg.id === aiMsgId ? { ...msg, text: "I'm having trouble connecting to my brain right now. Please try again in a moment!", isError: true } : msg
       ));
     } finally {
       setIsTyping(false);
@@ -364,7 +365,7 @@ const Assistant: React.FC = () => {
         <div className="aura-messages-list">
           {messages.map(msg => (
             <div key={msg.id} className={`aura-message-wrapper ${msg.sender}`}>
-              <div className={`aura-message ${msg.sender}`}>
+              <div className={`aura-message ${msg.sender} ${msg.isError ? 'error' : ''}`}>
                 {msg.sender === 'ai' ? (
                   <div className="markdown-content">
                     {msg.text ? (
@@ -416,22 +417,24 @@ const Assistant: React.FC = () => {
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               disabled={isTyping || isInitializing}
             />
-            <button
-              className={`aura-voice-btn ${isListening ? 'listening' : ''}`}
-              onClick={toggleListening}
-              disabled={isTyping || isInitializing}
-              title="Voice Input"
-            >
-              <Mic size={18} />
-            </button>
-            <button
-              className="aura-send-btn"
-              onClick={() => handleSend()}
-              disabled={isTyping || !input.trim() || isInitializing}
-              aria-label="Send message"
-            >
-              <Send size={18} />
-            </button>
+            <div className="aura-input-actions">
+              <button
+                className={`aura-voice-btn ${isListening ? 'listening' : ''}`}
+                onClick={toggleListening}
+                disabled={isTyping || isInitializing}
+                title="Voice Input"
+              >
+                <Mic size={18} />
+              </button>
+              <button
+                className="aura-send-btn"
+                onClick={() => handleSend()}
+                disabled={isTyping || !input.trim() || isInitializing}
+                aria-label="Send message"
+              >
+                <Send size={18} />
+              </button>
+            </div>
           </div>
         </div>
       </div>
