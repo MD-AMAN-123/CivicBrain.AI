@@ -1,82 +1,86 @@
 export default async function handler(req: any, res: any) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ reply: "Only POST allowed" });
-  }
+  if (req.method !== "POST") return res.status(405).json({ reply: "Only POST allowed" });
 
   try {
     const { message } = req.body;
-    if (!message) return res.status(400).json({ reply: "Message required" });
+    if (!message) return res.status(400).json({ reply: "Message is required" });
 
-    // Clean API Key
     const apiKey = (process.env.GEMINI_API_KEY || "").trim();
     if (!apiKey) {
-      return res.status(500).json({ reply: "⚠️ GEMINI_API_KEY missing in Vercel. Please add it in project settings." });
+      return res.status(500).json({ reply: "⚠️ GEMINI_API_KEY is missing in Vercel settings." });
     }
 
-    // Comprehensive list of model/version combinations
-    const attempts = [
-      { v: "v1beta", m: "gemini-1.5-flash" },
-      { v: "v1", m: "gemini-1.5-flash" },
-      { v: "v1beta", m: "gemini-pro" },
-      { v: "v1", m: "gemini-pro" },
-      { v: "v1beta", m: "gemini-1.5-pro" },
-      { v: "v1", m: "gemini-1.0-pro" }
-    ];
-
-    let lastErrorMessage = "";
-
-    for (const { v, m } of attempts) {
-      try {
-        console.log(`🚀 Attempting: ${m} via ${v}`);
-        
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/${v}/models/${m}:generateContent?key=${apiKey}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: message }] }],
-              generationConfig: {
-                temperature: 0.7,
-                topK: 40,
-                topP: 0.95,
-                maxOutputTokens: 1024,
-              }
-            })
-          }
-        );
-
-        const data = await response.json();
-
-        if (response.ok && data?.candidates?.[0]?.content?.parts?.[0]?.text) {
-          console.log(`✅ SUCCESS with ${m} (${v})`);
-          return res.status(200).json({ reply: data.candidates[0].content.parts[0].text });
+    // Prepare the payload. 
+    // IMPORTANT: We use the most standard structure and include 'role' which is required by some models.
+    const payload = {
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: message }]
         }
+      ],
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 2000,
+      }
+    };
 
-        // If not OK, save the message and try next
-        lastErrorMessage = data.error?.message || "Unknown error";
-        console.warn(`❌ FAILED ${m} (${v}): ${lastErrorMessage}`);
+    // Try the most reliable combination first: v1beta + gemini-1.5-flash
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
-        // If the error is "API key not valid", stop immediately as no model will work
-        if (lastErrorMessage.includes("API key not valid")) {
-          return res.status(401).json({ reply: "⚠️ Your Gemini API Key is invalid. Please get a new one from AI Studio." });
-        }
+    console.log(`🚀 Sending request to Gemini v1beta (Model: gemini-1.5-flash)`);
+    
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
 
-      } catch (err: any) {
-        lastErrorMessage = err.message;
-        console.error(`💥 FETCH ERROR for ${m}:`, err);
+    const data = await response.json();
+
+    if (response.ok) {
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) {
+        console.log("✅ Gemini responded successfully!");
+        return res.status(200).json({ reply: text });
       }
     }
 
-    // If we reach here, all attempts failed
+    // IF PRIMARY FAILS, try the "stable" v1 + gemini-pro combination
+    console.warn("⚠️ Primary model failed, trying stable fallback (v1/gemini-pro)...");
+    const fallbackUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`;
+    
+    const fallbackResponse = await fetch(fallbackUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const fallbackData = await fallbackResponse.json();
+
+    if (fallbackResponse.ok) {
+      const text = fallbackData?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) {
+        console.log("✅ Fallback Gemini responded successfully!");
+        return res.status(200).json({ reply: text });
+      }
+    }
+
+    // If both fail, return the EXACT error from Google so we can diagnose it
+    const finalError = fallbackData.error?.message || data.error?.message || "Unknown Google API Error";
+    console.error("🔥 ALL MODELS FAILED:", finalError);
+
     return res.status(500).json({
-      reply: `⚠️ All Gemini models failed to respond.`,
-      error: lastErrorMessage,
-      tip: "Please verify that 'Generative Language API' is enabled for your key in the Google AI Studio."
+      reply: `⚠️ Gemini Error: ${finalError}`,
+      debug: {
+        primaryStatus: response.status,
+        fallbackStatus: fallbackResponse.status,
+        googleMessage: finalError
+      }
     });
 
   } catch (error: any) {
     console.error("🔥 CRITICAL HANDLER ERROR:", error);
-    return res.status(500).json({ reply: "⚠️ Internal Server Error", error: error.message });
+    return res.status(500).json({ reply: "⚠️ Server crashed", error: error.message });
   }
 }

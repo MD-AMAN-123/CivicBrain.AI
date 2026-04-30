@@ -7,27 +7,26 @@
   },
   "headers": [
     {
-      "source": "/(.*).webmanifest",
+      "source": "/(.*)",
       "headers": [
-        { "key": "Content-Type", "value": "application/manifest+json" },
-        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" },
         { "key": "Access-Control-Allow-Origin", "value": "*" }
       ]
     },
     {
-      "source": "/api/(.*)",
+      "source": "/manifest.webmanifest",
       "headers": [
-        { "key": "Access-Control-Allow-Credentials", "value": "true" },
-        { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
-        { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version" }
+        { "key": "Content-Type", "value": "application/manifest+json" }
       ]
     }
   ],
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/manifest.webmanifest", "destination": "/manifest.webmanifest" },
-    { "source": "/favicon.ico", "destination": "/favicon.ico" },
-    { "source": "/((?!api/|manifest.webmanifest|_vercel|assets/).*)", "destination": "/index.html" }
+    {
+      "source": "/api/gemini",
+      "destination": "/api/gemini.ts"
+    },
+    {
+      "source": "/((?!api/|manifest.webmanifest|_vercel|assets/).*)",
+      "destination": "/index.html"
+    }
   ]
 }
