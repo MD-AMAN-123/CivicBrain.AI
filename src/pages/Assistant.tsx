@@ -155,7 +155,7 @@ const Assistant: React.FC = () => {
         if (active) {
           setIsEngineReady(false);
           // Keep initialization screen visible so user can see the error
-          setIsInitializing(true); 
+          setIsInitializing(true);
           setInitText(`Setup Failed: ${err instanceof Error ? err.message : "You need internet for the first-time setup."}`);
         }
       }
