@@ -23,9 +23,6 @@ const VotingLocation: React.FC = () => {
     }
   }, []);
 
-  const mapUrl = `https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_MAPS_API_KEY}&q=${coords.lat},${coords.lng}&zoom=14`;
-
-
   return (
     <div className="location-card glass-card" role="region" aria-label="Voting Location Information">
       <div className="location-header">
@@ -63,16 +60,11 @@ const VotingLocation: React.FC = () => {
             </div>
           </div>
           
-          <div className="map-container glass-card overflow-hidden mt-4" style={{ height: '200px', width: '100%' }}>
-            <iframe
-              title="Google Maps Location"
-              width="100%"
-              height="100%"
-              style={{ border: 0 }}
-              loading="lazy"
-              allowFullScreen
-              src={mapUrl}
-            ></iframe>
+          <div className="map-placeholder glass-card mt-4 flex items-center justify-center bg-gray-900/50" style={{ height: '200px', width: '100%' }}>
+            <div className="text-center p-4 text-gray-400">
+              <MapPin className="mx-auto mb-2 opacity-50" size={32} />
+              <p className="text-sm italic">Voting center map currently unavailable</p>
+            </div>
           </div>
         </div>
       )}
@@ -81,4 +73,3 @@ const VotingLocation: React.FC = () => {
 };
 
 export default VotingLocation;
-
