@@ -921,3 +921,85 @@ body {
 .aura-offline-toggle.active .toggle-slider {
   left: 17px;
 }
+
+/* --- Responsive Adjustments for AI Assistant --- */
+@media (max-width: 768px) {
+  .aura-assistant-view {
+    padding: 0 0.5rem 0.5rem 0.5rem;
+  }
+
+  .aura-chat-container {
+    height: calc(100vh - 180px); /* Adjust based on sidebar/topbar presence */
+    border-radius: 1rem;
+  }
+
+  .aura-app-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .aura-header-title span {
+    font-size: 1.1rem;
+  }
+
+  /* Compact mode for mobile header badges */
+  .header-status-badges {
+    gap: 0.4rem !important;
+  }
+
+  .aura-offline-toggle span {
+    display: none; /* Icon/Switch only on mobile */
+  }
+
+  .aura-offline-toggle {
+    padding: 0.35rem;
+    gap: 0;
+  }
+
+  .aura-online-status span {
+    display: none; /* Dot only on mobile */
+  }
+
+  .aura-online-status {
+    padding: 0.35rem;
+    width: 28px;
+    height: 28px;
+    justify-content: center;
+  }
+
+  .aura-messages-list {
+    padding: 1rem 0.75rem 6rem 0.75rem;
+    gap: 1rem;
+  }
+
+  .aura-message-wrapper {
+    max-width: 92%;
+  }
+
+  .aura-message {
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+  }
+
+  .aura-input-container {
+    padding: 0.5rem 1rem;
+  }
+
+  .aura-input-box {
+    padding: 0.35rem 0.35rem 0.35rem 1rem;
+  }
+
+  .aura-quick-topics {
+    display: none; /* Hide quick chips on mobile to save vertical space */
+  }
+}
+
+/* For very small devices */
+@media (max-width: 480px) {
+  .aura-chat-container {
+    height: calc(100vh - 160px);
+  }
+  
+  .aura-header-title span {
+    display: none; /* Only show bot icon */
+  }
+}
