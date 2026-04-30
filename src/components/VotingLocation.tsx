@@ -60,15 +60,15 @@ const VotingLocation: React.FC = () => {
             </div>
           </div>
 
-          <div className="map-container glass-card overflow-hidden mt-4" style={{ height: '200px', width: '100%' }}>
+          <div className="map-container-fixed glass-card overflow-hidden mt-4">
             <iframe
               title="Google Maps Location"
               width="100%"
               height="100%"
-              style={{ border: 0 }}
+              className="map-iframe"
               loading="lazy"
               allowFullScreen
-              src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_MAPS_API_KEY}&q=${coords.lat},${coords.lng}&zoom=14`}
+              src={`https://www.google.com/maps/embed/v1/place?key=${(import.meta as any).env.VITE_MAPS_API_KEY}&q=${coords.lat},${coords.lng}&zoom=14`}
             ></iframe>
           </div>
         </div>

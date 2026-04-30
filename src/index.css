@@ -854,3 +854,12 @@ body {
     box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
   }
 }
+
+.map-container-fixed {
+  height: 200px;
+  width: 100%;
+}
+
+.map-iframe {
+  border: 0;
+}
