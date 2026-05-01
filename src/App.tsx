@@ -1,7 +1,7 @@
-import React, { Suspense, lazy, useEffect, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useState, useRef } from 'react';
 import './App.css';
 import { Routes, Route, Link, useNavigate, Navigate } from 'react-router-dom';
-import { Home, LayoutDashboard, History, MessageSquare, Settings, User, ShieldCheck, LogOut } from 'lucide-react';
+import { Home, LayoutDashboard, History, MessageSquare, Settings, User, ShieldCheck, LogOut, Search, Play } from 'lucide-react';
 import { supabase } from './lib/supabase';
 
 const HomeView = lazy(() => import('./pages/HomeView.tsx'));
@@ -53,6 +53,31 @@ const App: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [user, setUser] = useState<any>(null);
+  const [showResults, setShowResults] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  const navigationItems = [
+    { name: 'Home', path: '/', keywords: ['home', 'start', 'index'], icon: Home },
+    { name: 'Dashboard', path: '/dashboard', keywords: ['dashboard', 'stats', 'profile'], icon: LayoutDashboard },
+    { name: 'Process Guide', path: '/timeline', keywords: ['process', 'guide', 'timeline', 'steps'], icon: History },
+    { name: 'AI Assistant', path: '/assistant', keywords: ['assistant', 'ai', 'chat', 'help', 'aura'], icon: MessageSquare },
+    { name: 'Watch Demo', path: '/', keywords: ['demo', 'video', 'watch'], icon: Play },
+  ];
+
+  const filteredItems = searchTerm.trim() ? navigationItems.filter(item => 
+    item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    item.keywords.some(kw => kw.includes(searchTerm.toLowerCase()))
+  ) : [];
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowResults(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     // Check initial session
@@ -69,10 +94,23 @@ const App: React.FC = () => {
   }, []);
 
   const handleSearch = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && searchTerm.trim()) {
-      navigate('/assistant', { state: { prompt: searchTerm } });
-      setSearchTerm('');
+    if (e.key === 'Enter') {
+      if (filteredItems.length > 0) {
+        navigate(filteredItems[0].path);
+        setSearchTerm('');
+        setShowResults(false);
+      } else if (searchTerm.trim()) {
+        navigate('/assistant', { state: { prompt: searchTerm } });
+        setSearchTerm('');
+        setShowResults(false);
+      }
     }
+  };
+
+  const handleItemClick = (path: string) => {
+    navigate(path);
+    setSearchTerm('');
+    setShowResults(false);
   };
 
   const handleLogout = async () => {
@@ -129,14 +167,36 @@ const App: React.FC = () => {
       {/* Main Content Area */}
       <main className="main-content">
         <header className="top-bar">
-          <div className="search-bar glass-card">
-            <input
-              type="text"
-              placeholder="Explore election topics..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={handleSearch}
-            />
+          <div className="search-container" ref={searchRef}>
+            <div className={`search-bar glass-card ${showResults ? 'active' : ''}`}>
+              <Search size={18} className="search-icon" />
+              <input
+                type="text"
+                placeholder="Explore election topics..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setShowResults(true);
+                }}
+                onFocus={() => setShowResults(true)}
+                onKeyDown={handleSearch}
+              />
+            </div>
+            {showResults && filteredItems.length > 0 && (
+              <div className="search-dropdown glass-card animate-fade-in">
+                <div className="search-section-label">Quick Navigation</div>
+                {filteredItems.map((item, index) => (
+                  <div 
+                    key={index} 
+                    className="search-result-item"
+                    onClick={() => handleItemClick(item.path)}
+                  >
+                    <item.icon size={18} className="item-icon" />
+                    <span>{item.name}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           <div className="header-actions">
             {user ? (
