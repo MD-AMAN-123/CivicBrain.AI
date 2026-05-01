@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "start": "node server.js",
     "test": "vitest run"
   },
   "dependencies": {
@@ -19,6 +20,7 @@
     "@types/three": "^0.184.0",
     "@vercel/node": "^5.7.13",
     "chart.js": "^4.5.1",
+    "express": "^5.2.1",
     "firebase": "^12.12.1",
     "framer-motion": "^12.38.0",
     "lucide-react": "^1.8.0",
