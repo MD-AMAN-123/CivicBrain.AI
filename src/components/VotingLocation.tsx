@@ -3,24 +3,20 @@ import { MapPin, Info, Calendar, User } from 'lucide-react';
 
 const VotingLocation: React.FC = () => {
   const [constituency, setConstituency] = useState<string>("Detecting...");
+  const [electionDate, setElectionDate] = useState<string>("Fetching...");
+  const [status, setStatus] = useState<string>("Fetching...");
   const [loading, setLoading] = useState(true);
-  const [coords, setCoords] = useState({ lat: 28.6139, lng: 77.2090 }); // Default to Delhi
+  const [coords, setCoords] = useState({ lat: 17.3850, lng: 78.4867 }); // Hyderabad, India
 
   useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setCoords({ lat: position.coords.latitude, lng: position.coords.longitude });
-          // In a real app, we would use reverse geocoding to get the constituency
-          setConstituency("New Delhi Central");
-          setLoading(false);
-        },
-        () => {
-          setConstituency("Location Access Denied");
-          setLoading(false);
-        }
-      );
-    }
+    // Simulate fetching real-time location and election data
+    setTimeout(() => {
+      setCoords({ lat: 17.3850, lng: 78.4867 }); // Hyderabad coordinates
+      setConstituency("Hyderabad");
+      setElectionDate("Feb 2026 (GHMC)");
+      setStatus("Registration Open");
+      setLoading(false);
+    }, 1000);
   }, []);
 
   return (
@@ -49,14 +45,23 @@ const VotingLocation: React.FC = () => {
             <Calendar size={18} aria-hidden="true" />
             <div>
               <span className="detail-label">Next Election</span>
-              <span className="detail-value">Nov 15, 2026</span>
+              <span className="detail-value">{electionDate}</span>
             </div>
           </div>
           <div className="detail-item">
             <Info size={18} aria-hidden="true" />
             <div>
               <span className="detail-label">Status</span>
-              <span className="detail-value text-green">Registration Open</span>
+              <span className="detail-value text-green">
+                <a 
+                  href="https://voters.eci.gov.in/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  style={{ color: 'inherit', textDecoration: 'underline', cursor: 'pointer' }}
+                >
+                  {status}
+                </a>
+              </span>
             </div>
           </div>
 

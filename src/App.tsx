@@ -1,7 +1,7 @@
 import React, { Suspense, lazy, useEffect, useState, useRef } from 'react';
 import './App.css';
 import { Routes, Route, Link, useNavigate, Navigate } from 'react-router-dom';
-import { Home, LayoutDashboard, History, MessageSquare, Settings, User, ShieldCheck, LogOut, Search, Play } from 'lucide-react';
+import { Home, LayoutDashboard, History, MessageSquare, Settings, User, ShieldCheck, LogOut, Search, Play, Sun, Moon } from 'lucide-react';
 import { supabase } from './lib/supabase';
 
 const HomeView = lazy(() => import('./pages/HomeView.tsx'));
@@ -56,6 +56,12 @@ const App: React.FC = () => {
   const [showResults, setShowResults] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
+  // Theme State
+  const [isLightMode, setIsLightMode] = useState(() => {
+    const savedTheme = localStorage.getItem('theme');
+    return savedTheme === 'light';
+  });
+
   const navigationItems = [
     { name: 'Home', path: '/', keywords: ['home', 'start', 'index'], icon: Home },
     { name: 'Dashboard', path: '/dashboard', keywords: ['dashboard', 'stats', 'profile'], icon: LayoutDashboard },
@@ -92,6 +98,19 @@ const App: React.FC = () => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Theme effect
+  useEffect(() => {
+    if (isLightMode) {
+      document.documentElement.setAttribute('data-theme', 'light');
+      localStorage.setItem('theme', 'light');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('theme', 'dark');
+    }
+  }, [isLightMode]);
+
+  const toggleTheme = () => setIsLightMode(!isLightMode);
 
   const handleSearch = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -199,6 +218,14 @@ const App: React.FC = () => {
             )}
           </div>
           <div className="header-actions">
+            <button 
+              className="btn-icon theme-toggle glass-card flex-center" 
+              onClick={toggleTheme}
+              aria-label="Toggle theme"
+              style={{ width: '40px', height: '40px', borderRadius: '50%', border: '1px solid var(--glass-border)', background: 'var(--glass-bg)', color: 'var(--text-main)', cursor: 'pointer', padding: 0 }}
+            >
+              {isLightMode ? <Moon size={20} /> : <Sun size={20} />}
+            </button>
             {user ? (
               <button className="btn-outline flex-center gap-2" onClick={handleLogout}>
                 <LogOut size={18} /> Sign Out

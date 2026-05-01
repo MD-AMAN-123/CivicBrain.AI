@@ -17,6 +17,27 @@
   --glass-blur: blur(12px);
 }
 
+[data-theme="light"] {
+  /* Professional Light Theme Palette */
+  --bg-deep: #f8fafc;
+  --bg-surface: #ffffff;
+  --primary: #4f46e5;
+  --primary-glow: rgba(79, 70, 229, 0.15);
+  --secondary: #9333ea;
+  --text-main: #0f172a;
+  --text-dim: #475569;
+  
+  /* Light Glassmorphism */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  
+  /* Aura Chat Overrides */
+  --aura-bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  --aura-surface-border: rgba(0, 0, 0, 0.08);
+  --aura-user-msg-bg: linear-gradient(135deg, #4f46e5, #7e22ce);
+  --aura-ai-msg-bg: rgba(255, 255, 255, 0.8);
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -305,7 +326,7 @@ body {
   flex: 1;
   background: transparent;
   border: none;
-  color: #fff;
+  color: var(--text-main);
   font-family: inherit;
   font-size: 1rem;
   outline: none;
@@ -482,7 +503,7 @@ body {
   gap: 0.75rem;
   font-weight: 700;
   font-size: 1.5rem;
-  color: #fff;
+  color: var(--text-main);
 }
 
 .aura-quick-topics {
@@ -641,7 +662,7 @@ body {
   border-radius: 1rem;
   border: 1px solid var(--glass-border);
   background: rgba(255, 255, 255, 0.03);
-  color: #fff;
+  color: var(--text-main);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -713,7 +734,7 @@ body {
   border-radius: 1rem;
   font-size: 1rem;
   font-weight: 500;
-  color: #fff;
+  color: var(--text-main);
 }
 
 .option-card:hover:not(:disabled) {
@@ -746,7 +767,7 @@ body {
 .score-badge {
   font-size: 3rem;
   font-weight: 800;
-  color: #fff;
+  color: var(--text-main);
   margin: 1rem 0 2rem 0;
   padding: 0.5rem 2rem;
   background: rgba(255, 255, 255, 0.05);
