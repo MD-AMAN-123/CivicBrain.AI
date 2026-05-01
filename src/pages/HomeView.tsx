@@ -1,10 +1,11 @@
-import React, { Suspense, lazy } from 'react';
-import { ArrowRight, Vote, Globe, Award, Zap } from 'lucide-react';
+import React, { Suspense, lazy, useState } from 'react';
+import { ArrowRight, Vote, Globe, Award, Zap, Play, BookOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 const ThreeScene = lazy(() => import('../components/ThreeScene'));
 
 const HomeView: React.FC = () => {
   const navigate = useNavigate();
+  const [showDemoOptions, setShowDemoOptions] = useState(false);
 
   return (
     <div className="home-view">
@@ -24,7 +25,43 @@ const HomeView: React.FC = () => {
           <button className="btn-primary flex-center gap-2" onClick={() => navigate('/timeline')}>
             Start Your Journey <ArrowRight size={20} />
           </button>
-          <button className="btn-outline">Watch Demo</button>
+          
+          <div className="demo-actions-wrapper">
+            {!showDemoOptions ? (
+              <button 
+                className="btn-outline"
+                onClick={() => setShowDemoOptions(true)}
+              >
+                Watch Demo
+              </button>
+            ) : (
+              <div className="demo-sub-buttons animate-fade-in">
+                <a 
+                  href="https://drive.google.com/file/d/1KKkAnWOfQCzxJUnGG6OVSPoZJ7T52Sua/view?usp=drivesdk" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="sub-btn glass-card"
+                >
+                  <Play size={16} /> Demo by AI
+                </a>
+                <a 
+                  href="https://drive.google.com/file/d/1aRSOxzjgZrUKrQANU-OqirLxsMgIQl9p/view?usp=drivesdk" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="sub-btn glass-card"
+                >
+                  <BookOpen size={16} /> Step by step guide
+                </a>
+                <button 
+                  className="close-demo-btn"
+                  onClick={() => setShowDemoOptions(false)}
+                  title="Close options"
+                >
+                  ×
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
