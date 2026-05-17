@@ -2,14 +2,38 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
+// Security: Use helmet but allow script/style from CDN for 3D assets/Google Fonts
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+      "img-src": ["'self'", "data:", "https://*"],
+      "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net"],
+      "connect-src": ["'self'", "https://*"],
+      "worker-src": ["'self'", "blob:"]
+    },
+  },
+}));
+
 app.use(express.json());
 
+// Rate limiting for the Gemini API to prevent abuse
+const geminiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: { reply: "Too many requests from this IP, please try again after 15 minutes." }
+});
+
 // API Route mirroring Vercel's api/gemini.ts
-app.post('/api/gemini', async (req, res) => {
+app.post('/api/gemini', geminiLimiter, async (req, res) => {
   try {
     const { message } = req.body;
     if (!message) return res.status(400).json({ reply: "Message is required" });

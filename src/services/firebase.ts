@@ -1,6 +1,10 @@
 import { initializeApp } from 'firebase/app';
+import type { Auth } from 'firebase/auth';
 import { getAuth } from 'firebase/auth';
+import type { Firestore } from 'firebase/firestore';
 import { getFirestore } from 'firebase/firestore';
+
+/// <reference types="vite/client" />
 
 // Replace with your actual Firebase config
 const firebaseConfig = {
@@ -15,8 +19,8 @@ const firebaseConfig = {
 
 
 let app;
-let auth: any = null;
-let db: any = null;
+let auth: Auth | null = null;
+let db: Firestore | null = null;
 
 try {
   if (firebaseConfig.apiKey) {

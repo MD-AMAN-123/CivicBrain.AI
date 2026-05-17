@@ -10,10 +10,21 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "noEmit": true
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "lib": [
+      "ESNext",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force"
   },
   "include": [
     "vite.config.ts",
-    "api/**/*.ts"
+    "api/**/*.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx"
   ]
 }

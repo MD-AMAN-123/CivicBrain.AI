@@ -1,4 +1,6 @@
-export default async function handler(req: any, res: any) {
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") return res.status(405).json({ reply: "Only POST allowed" });
 
   try {
@@ -51,14 +53,14 @@ export default async function handler(req: any, res: any) {
         }
         lastError = data.error?.message || "Unknown error";
         console.warn(`❌ Model ${m} failed: ${lastError}`);
-      } catch (err: any) {
-        lastError = err.message;
+      } catch (err: unknown) {
+        lastError = err instanceof Error ? err.message : String(err);
       }
     }
 
     return res.status(500).json({ reply: `⚠️ Gemini Error: ${lastError}` });
 
-  } catch (error: any) {
-    return res.status(500).json({ reply: "⚠️ Server error", error: error.message });
+  } catch (error: unknown) {
+    return res.status(500).json({ reply: "⚠️ Server error", error: error instanceof Error ? error.message : String(error) });
   }
 }

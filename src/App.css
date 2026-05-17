@@ -1130,13 +1130,100 @@
   }
 }
 
-.blob-1 {
-  top: -100px;
-  right: -100px;
+.aura-init-actions {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
 }
 
-.blob-2 {
-  bottom: 100px;
-  left: -200px;
-  opacity: 0.3;
+.aura-init-note {
+  font-size: 0.8rem;
+  opacity: 0.6;
+  margin-top: 1.5rem;
+  max-width: 300px;
+}
+
+.header-status-badges {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.aura-offline-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  transition: color 0.2s ease;
+}
+
+.aura-offline-label.active {
+  color: #fff;
+}
+
+.aura-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--glass-border);
+  border-radius: 1rem;
+}
+
+.aura-action-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.aura-action-btn:hover {
+  color: var(--primary);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0.5rem;
+}
+
+.aura-action-btn.active {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.aura-chat-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: white;
+  outline: none;
+  font-size: 0.95rem;
+}
+
+.aura-send-btn {
+  background: var(--primary);
+  border: none;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.aura-send-btn:disabled {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-dim);
+  cursor: not-allowed;
+}
+
+.aura-send-btn:not(:disabled):hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 15px var(--primary-glow);
 }

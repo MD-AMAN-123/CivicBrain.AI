@@ -5,11 +5,13 @@ import * as THREE from 'three';
 
 const FloatingSphere = () => {
   const mesh = useRef<THREE.Mesh>(null!);
+  const startTime = useRef<number | null>(null);
   
-  const startTime = useRef(performance.now() / 1000);
-  
-  useFrame(() => {
-    const time = (performance.now() / 1000) - startTime.current;
+  useFrame((state) => {
+    if (startTime.current === null) {
+      startTime.current = state.clock.getElapsedTime();
+    }
+    const time = state.clock.getElapsedTime() - startTime.current;
     mesh.current.rotation.x = time * 0.2;
     mesh.current.rotation.y = time * 0.3;
   });

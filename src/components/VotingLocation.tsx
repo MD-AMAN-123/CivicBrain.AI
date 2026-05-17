@@ -73,7 +73,7 @@ const VotingLocation: React.FC = () => {
               className="map-iframe"
               loading="lazy"
               allowFullScreen
-              src={`https://www.google.com/maps/embed/v1/place?key=${(import.meta as any).env.VITE_MAPS_API_KEY}&q=${coords.lat},${coords.lng}&zoom=14`}
+              src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_MAPS_API_KEY}&q=${coords.lat},${coords.lng}&zoom=14`}
             ></iframe>
           </div>
         </div>

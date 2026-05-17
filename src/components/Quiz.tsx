@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, XCircle, RefreshCw, Award } from 'lucide-react';
 import { generateQuiz } from '../services/gemini';
@@ -25,9 +25,23 @@ const Quiz: React.FC<QuizProps> = ({ topic = "Elections", onClose }) => {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
 
-  useEffect(() => {
-    loadQuiz();
+  const loadQuiz = useCallback(async () => {
+    setLoading(true);
+    const data = await generateQuiz(topic);
+    setQuestions(data || []);
+    setLoading(false);
+    setCurrentStep(0);
+    setScore(0);
+    setShowResult(false);
   }, [topic]);
+
+  useEffect(() => {
+    // Avoid calling loadQuiz synchronously to prevent cascading renders
+    const timer = setTimeout(() => {
+      loadQuiz();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [loadQuiz]);
 
   const [loadingMsg, setLoadingMsg] = useState("Analyzing recent learning...");
 
@@ -47,16 +61,6 @@ const Quiz: React.FC<QuizProps> = ({ topic = "Elections", onClose }) => {
       return () => clearInterval(interval);
     }
   }, [loading]);
-
-  const loadQuiz = async () => {
-    setLoading(true);
-    const data = await generateQuiz(topic);
-    setQuestions(data || []);
-    setLoading(false);
-    setCurrentStep(0);
-    setScore(0);
-    setShowResult(false);
-  };
 
   const handleOptionClick = (option: string) => {
     if (selectedOption !== null) return;

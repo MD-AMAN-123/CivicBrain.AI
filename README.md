@@ -19,6 +19,13 @@
 
 **CivicBrain.AI** is a state-of-the-art interactive platform designed to modernize civic learning. It combines a stunning 3D interactive interface with the power of Google's Gemini AI to create an engaging, gamified learning experience.
 
+### 🌍 Mission & Impact
+CivicBrain.AI was born from a simple but powerful idea: **Empowerment through Education.** In a world of complex election cycles and misinformation, our platform serves as a "GPS for Democracy."
+
+- **Objective:** To bridge the gap between complex legal/electoral processes and the average citizen.
+- **Problem Statement:** Traditional civic education is often dry, inaccessible, and static. Young voters lack engaging tools to understand the *why* and *how* of their democratic rights.
+- **Our Solution:** A hybrid AI platform that provides instant clarity (Aura AI), visualizes history (Election Timeline), and rewards participation (Gamified Dashboard).
+
 ### ✨ Key Features
 - 🤖 **Aura AI Assistant:** A fully integrated Gemini AI proxy that answers civic-related questions with context awareness.
 - 🗺️ **3D Interactive Map:** A beautiful Three.js powered interactive map displaying real-time data for locations like Hyderabad, India.
@@ -49,14 +56,14 @@ CivicBrain.AI is built as a **Progressive Web App (PWA)**, meaning it can work e
 | **Cache API** | Stores all static assets (HTML, CSS, JS, images) locally on the user's device after the first visit, so subsequent loads are instant. |
 | **Web App Manifest** (`manifest.json`) | Defines the app's name, icons, theme color, and display mode. This enables the browser's "Install App" prompt on mobile and desktop. |
 | **localStorage** | Persists user preferences (like the Dark/Light theme toggle) across sessions, even when offline. |
-| **Gemma 2B (via WebLLM)** | Google's lightweight open-source AI model that runs **entirely inside the browser** using WebGPU. When the user goes offline, the Aura AI Assistant automatically switches from cloud-based Gemini to the local Gemma model, so AI chat continues to work without internet. |
+| **Qwen 2.5 0.5B (via WebLLM)** | Google's lightweight open-source AI model that runs **entirely inside the browser** using WebGPU. When the user goes offline, the Aura AI Assistant automatically switches from cloud-based Gemini to the local Qwen model, so AI chat continues to work without internet. |
 | **`@mlc-ai/web-llm`** | The Machine Learning Compilation engine that loads and runs the Gemma 2B model directly in the browser using WebGPU acceleration — no server needed. |
 
 > **How it works in practice:**
 > 1. The user visits the site for the first time → the Service Worker caches all assets in the background.
 > 2. On the next visit (even without internet), the cached version loads instantly.
 > 3. When online → the AI Assistant uses **Gemini (Cloud)** for fast, powerful responses.
-> 4. When offline → the AI Assistant automatically falls back to **Gemma 2B (Local)**, running entirely in the browser via WebGPU — no internet required for AI chat!
+> 4. When offline → the AI Assistant automatically falls back to **Qwen 2.5 (Local)**, running entirely in the browser via WebGPU — no internet required for AI chat!
 
 ---
 

@@ -1,8 +1,9 @@
 import React, { Suspense, lazy, useEffect, useState, useRef } from 'react';
 import './App.css';
 import { Routes, Route, Link, useNavigate, Navigate } from 'react-router-dom';
-import { Home, LayoutDashboard, History, MessageSquare, Settings, User, ShieldCheck, LogOut, Search, Play, Sun, Moon } from 'lucide-react';
+import { Home, LayoutDashboard, History, MessageSquare, Settings, User, ShieldCheck, LogOut, Search, Play, Sun, Moon, Camera } from 'lucide-react';
 import { supabase } from './lib/supabase';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 const HomeView = lazy(() => import('./pages/HomeView.tsx'));
 const Dashboard = lazy(() => import('./pages/Dashboard.tsx'));
@@ -10,6 +11,7 @@ const Timeline = lazy(() => import('./pages/Timeline.tsx'));
 const Assistant = lazy(() => import('./pages/Assistant.tsx'));
 const Admin = lazy(() => import('./pages/Admin.tsx'));
 const Login = lazy(() => import('./pages/Login.tsx'));
+const ElectionUploads = lazy(() => import('./pages/ElectionUploads.tsx'));
 
 // Simple Error Boundary Component
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
@@ -22,7 +24,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
     return { hasError: true };
   }
 
-  componentDidCatch(error: any, errorInfo: any) {
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
   }
 
@@ -42,7 +44,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 }
 
 // Protected Route Component
-const ProtectedRoute: React.FC<{ children: React.ReactNode; user: any }> = ({ children, user }) => {
+const ProtectedRoute: React.FC<{ children: React.ReactNode; user: SupabaseUser | null }> = ({ children, user }) => {
   if (!user) {
     return <Navigate to="/login" replace />;
   }
@@ -52,7 +54,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; user: any }> = ({ ch
 const App: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const [showResults, setShowResults] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
@@ -67,6 +69,7 @@ const App: React.FC = () => {
     { name: 'Dashboard', path: '/dashboard', keywords: ['dashboard', 'stats', 'profile'], icon: LayoutDashboard },
     { name: 'Process Guide', path: '/timeline', keywords: ['process', 'guide', 'timeline', 'steps'], icon: History },
     { name: 'AI Assistant', path: '/assistant', keywords: ['assistant', 'ai', 'chat', 'help', 'aura'], icon: MessageSquare },
+    { name: 'Voter Lens', path: '/uploads', keywords: ['upload', 'gallery', 'image', 'photo', 'moments'], icon: Camera },
     { name: 'Watch Demo', path: '/', keywords: ['demo', 'video', 'watch'], icon: Play },
   ];
 
@@ -163,6 +166,10 @@ const App: React.FC = () => {
             <MessageSquare size={20} />
             <span>AI Assistant</span>
           </Link>
+          <Link to="/uploads" className="nav-link" aria-label="Go to Voter Lens Gallery">
+            <Camera size={20} />
+            <span>Voter Lens</span>
+          </Link>
         </div>
 
         <div className="sidebar-footer">
@@ -249,6 +256,7 @@ const App: React.FC = () => {
                 <Route path="/dashboard" element={<ProtectedRoute user={user}><Dashboard /></ProtectedRoute>} />
                 <Route path="/timeline" element={<ProtectedRoute user={user}><Timeline /></ProtectedRoute>} />
                 <Route path="/assistant" element={<ProtectedRoute user={user}><Assistant /></ProtectedRoute>} />
+                <Route path="/uploads" element={<ProtectedRoute user={user}><ElectionUploads /></ProtectedRoute>} />
                 <Route path="/admin" element={<ProtectedRoute user={user}><Admin /></ProtectedRoute>} />
               </Routes>
             </Suspense>
@@ -266,6 +274,9 @@ const App: React.FC = () => {
         </Link>
         <Link to="/timeline" className="nav-link">
           <History size={24} />
+        </Link>
+        <Link to="/uploads" className="nav-link">
+          <Camera size={24} />
         </Link>
         <Link to="/assistant" className="nav-link">
           <MessageSquare size={24} />

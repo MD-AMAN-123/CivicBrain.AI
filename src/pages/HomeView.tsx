@@ -22,8 +22,8 @@ const HomeView: React.FC = () => {
           becoming an informed, active, and powerful citizen.
         </p>
         <div className="hero-actions animate-fade-in delay-400">
-          <button className="btn-primary flex-center gap-2" onClick={() => navigate('/timeline')}>
-            Start Your Journey <ArrowRight size={20} />
+          <button className="btn-primary flex-center gap-2" onClick={() => navigate('/timeline')} aria-label="Start your civic journey">
+            Start Your Journey <ArrowRight size={20} aria-hidden="true" />
           </button>
           
           <div className="demo-actions-wrapper">
@@ -31,31 +31,35 @@ const HomeView: React.FC = () => {
               <button 
                 className="btn-outline"
                 onClick={() => setShowDemoOptions(true)}
+                aria-label="View demo options"
               >
                 Watch Demo
               </button>
             ) : (
-              <div className="demo-sub-buttons animate-fade-in">
+              <div className="demo-sub-buttons animate-fade-in" role="group" aria-label="Demo sub-options">
                 <a 
                   href="https://drive.google.com/file/d/1KKkAnWOfQCzxJUnGG6OVSPoZJ7T52Sua/view?usp=drivesdk" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="sub-btn glass-card"
+                  aria-label="Watch AI video demo"
                 >
-                  <Play size={16} /> Demo by AI
+                  <Play size={16} aria-hidden="true" /> Demo by AI
                 </a>
                 <a 
                   href="https://drive.google.com/file/d/1aRSOxzjgZrUKrQANU-OqirLxsMgIQl9p/view?usp=drivesdk" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="sub-btn glass-card"
+                  aria-label="Read step by step guide"
                 >
-                  <BookOpen size={16} /> Step by step guide
+                  <BookOpen size={16} aria-hidden="true" /> Step by step guide
                 </a>
                 <button 
                   className="close-demo-btn"
                   onClick={() => setShowDemoOptions(false)}
                   title="Close options"
+                  aria-label="Close demo options"
                 >
                   ×
                 </button>
@@ -69,7 +73,7 @@ const HomeView: React.FC = () => {
       <section className="feature-grid">
         <div className="feature-card glass-card">
           <div className="icon-wrapper bg-blue">
-            <Vote size={24} />
+            <Vote size={24} aria-hidden="true" />
           </div>
           <h3>Process Guide</h3>
           <p>From registration to results, understand every step of the democratic machine.</p>
@@ -77,7 +81,7 @@ const HomeView: React.FC = () => {
         
         <div className="feature-card glass-card">
           <div className="icon-wrapper bg-purple">
-            <Zap size={24} />
+            <Zap size={24} aria-hidden="true" />
           </div>
           <h3>AI Explainer</h3>
           <p>Complex topics like EVMs and Electoral Bonds explained simply by Gemini AI.</p>
@@ -85,7 +89,7 @@ const HomeView: React.FC = () => {
 
         <div className="feature-card glass-card">
           <div className="icon-wrapper bg-amber">
-            <Globe size={24} />
+            <Globe size={24} aria-hidden="true" />
           </div>
           <h3>Local Info</h3>
           <p>Constituency-based details and local voting guidelines powered by Google Maps.</p>
@@ -93,7 +97,7 @@ const HomeView: React.FC = () => {
 
         <div className="feature-card glass-card">
           <div className="icon-wrapper bg-green">
-            <Award size={24} />
+            <Award size={24} aria-hidden="true" />
           </div>
           <h3>Gamified Learning</h3>
           <p>Earn badges and climb the leaderboard as you master civic knowledge.</p>

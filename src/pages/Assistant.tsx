@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Send, Bot, Command, Mic } from 'lucide-react';
+import { Send, Bot, Mic } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { CreateMLCEngine, MLCEngine } from "@mlc-ai/web-llm";
@@ -75,7 +75,10 @@ const Assistant: React.FC = () => {
     window.addEventListener('offline', handleOffline);
 
     // Initialize Speech Recognition
-    const win = window as any;
+    const win = window as unknown as Window & { 
+      SpeechRecognition?: new () => SpeechRecognition; 
+      webkitSpeechRecognition?: new () => SpeechRecognition; 
+    };
     const SpeechRecognitionClass = win.SpeechRecognition || win.webkitSpeechRecognition;
 
     if (SpeechRecognitionClass) {
@@ -131,6 +134,7 @@ const Assistant: React.FC = () => {
       }
 
       try {
+        setIsInitializing(true);
         const initProgressCallback = (report: InitProgressReport) => {
           if (!active) return;
           setProgress(report.progress * 100);
@@ -164,21 +168,17 @@ const Assistant: React.FC = () => {
 
     };
 
-    // Only show the blocking initialization screen if the user is offline 
-    // OR if they have explicitly enabled Local Mode and the engine isn't ready.
-    if (!isOnline || isLocalMode) {
-      if (!isEngineReady) {
-        setIsInitializing(true);
-      }
+    // We only need to check if we should start initializing when we enter local mode
+    // or when the network status changes while in local mode.
+    if ((!isOnline || isLocalMode) && !isEngineReady) {
+      initEngine();
     }
-
-    initEngine();
 
 
     return () => {
       active = false;
     };
-  }, [isLocalMode]); // Re-run or check when mode changes
+  }, [isLocalMode, isOnline, isEngineReady, engine]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -210,7 +210,35 @@ const Assistant: React.FC = () => {
     setMessages(prev => [...prev, initialAiMsg]);
 
     try {
-      if (isOnline && !isLocalMode) {
+      const normalized = textToSend.toLowerCase().trim();
+      const isOfflineQuery = (
+        (normalized.includes('offline') || normalized.includes('online')) &&
+        (
+          normalized.includes('are you') ||
+          normalized.includes('is it') ||
+          normalized.includes('you are') ||
+          normalized.includes('whether') ||
+          normalized.includes('running') ||
+          normalized.includes('mode') ||
+          normalized.includes('status') ||
+          /^(offline|online)\??$/.test(normalized) ||
+          normalized.includes('am i') ||
+          normalized.includes('are we')
+        )
+      );
+
+      if (isOfflineQuery) {
+        let reply = "";
+        if (!isOnline || isLocalMode) {
+          reply = "Yes, I am currently running offline using my local brain (Gemma model) on your device. I don't need an internet connection to assist you right now!";
+        } else {
+          reply = "No, I am currently online and connected to the cloud (Gemini model). If you'd like to try my offline mode, you can toggle the 'Offline Mode' switch in the top header!";
+        }
+        await new Promise(resolve => setTimeout(resolve, 300));
+        setMessages(prev => prev.map(msg =>
+          msg.id === aiMsgId ? { ...msg, text: reply } : msg
+        ));
+      } else if (isOnline && !isLocalMode) {
         // Primary: Use Gemini Cloud API when online and not in local mode
         let fullText = "";
         await explainConcept({
@@ -239,7 +267,7 @@ const Assistant: React.FC = () => {
         ];
 
         const chunks = await engine.chat.completions.create({
-          messages: reqMessages as any, // Cast to any to satisfy the complex Union type of web-llm
+          messages: reqMessages as { role: "system" | "user" | "assistant"; content: string }[],
           stream: true,
         });
 
@@ -277,7 +305,7 @@ const Assistant: React.FC = () => {
     } finally {
       setIsTyping(false);
     }
-  }, [input, isTyping, isInitializing, engine, isEngineReady, isOnline, isLocalMode]);
+  }, [input, isTyping, isInitializing, engine, isEngineReady, isOnline, isLocalMode, messages]);
 
 
 
@@ -306,15 +334,15 @@ const Assistant: React.FC = () => {
             <div className="aura-welcome-box">
               <h2>Waking up Aura AI...</h2>
               <p>{initText}</p>
-              <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-                <button className="topic-chip glass-card" onClick={() => setIsInitializing(false)}>
+              <div className="aura-init-actions">
+                <button className="topic-chip glass-card" onClick={() => setIsInitializing(false)} aria-label="Cancel loading local brain">
                   Cancel Loading
                 </button>
-                <button className="topic-chip glass-card" onClick={() => window.location.reload()}>
+                <button className="topic-chip glass-card" onClick={() => window.location.reload()} aria-label="Retry loading local brain">
                   Retry
                 </button>
               </div>
-              <p style={{ fontSize: '0.8rem', opacity: 0.6, marginTop: '1.5rem', maxWidth: '300px' }}>
+              <p className="aura-init-note">
                 {!('gpu' in navigator)
                   ? "⚠️ Your browser/device doesn't support WebGPU. Internet is required."
                   : "Loading my local brain can take a few minutes on the first visit."}
@@ -334,20 +362,30 @@ const Assistant: React.FC = () => {
             <Bot size={24} className="text-gradient" />
             <span>CivicBrain Aura</span>
           </div>
-          <div className="header-status-badges" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <div className="header-status-badges">
             {/* New Offline Toggle */}
-            <div
+            <button
+              type="button"
               className={`aura-offline-toggle ${isLocalMode ? 'active' : ''}`}
-              onClick={() => setIsLocalMode(!isLocalMode)}
+              role="switch"
+              aria-checked={isLocalMode}
+              onClick={() => {
+                const newMode = !isLocalMode;
+                setIsLocalMode(newMode);
+                if (newMode && !isEngineReady) {
+                  setIsInitializing(true);
+                }
+              }}
               title={isLocalMode ? "Switch to Cloud AI" : "Switch to Local AI (Works Offline)"}
+              aria-label="Toggle Local AI Offline Mode"
             >
-              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: isLocalMode ? '#fff' : 'var(--text-dim)' }}>
+              <span className={`aura-offline-label ${isLocalMode ? 'active' : ''}`}>
                 Offline Mode
               </span>
               <div className="toggle-switch">
                 <div className="toggle-slider"></div>
               </div>
-            </div>
+            </button>
 
             <div className={`aura-online-status ${isOnline ? 'online' : 'offline'}`}>
               <div className="aura-status-dot"></div>
@@ -407,34 +445,33 @@ const Assistant: React.FC = () => {
             <button className="topic-chip glass-card" onClick={() => handleTopicClick('NOTA')} disabled={isInitializing}>What is NOTA?</button>
             <button className="topic-chip glass-card" onClick={() => handleTopicClick('Voter Registration')} disabled={isInitializing}>Registration Help</button>
           </div>
-          <div className="aura-input-box">
-            <Command size={18} className="aura-command-icon" />
+          <div className="aura-input-wrapper">
+            <button 
+              className={`aura-action-btn ${isListening ? 'active' : ''}`} 
+              onClick={toggleListening}
+              title={isListening ? "Stop listening" : "Start voice input"}
+              aria-label={isListening ? "Stop listening" : "Start voice input"}
+            >
+              <Mic size={20} className={isListening ? 'animate-pulse' : ''} />
+            </button>
             <input
               type="text"
-              placeholder={isInitializing ? "Initializing Engine..." : "Ask anything about elections..."}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              disabled={isTyping || isInitializing}
+              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+              placeholder={isOnline ? "Ask about elections, EVMs, or voting..." : "Ask me anything (Offline Mode)..."}
+              className="aura-chat-input"
+              disabled={isInitializing}
+              aria-label="Chat input"
             />
-            <div className="aura-input-actions">
-              <button
-                className={`aura-voice-btn ${isListening ? 'listening' : ''}`}
-                onClick={toggleListening}
-                disabled={isTyping || isInitializing}
-                title="Voice Input"
-              >
-                <Mic size={18} />
-              </button>
-              <button
-                className="aura-send-btn"
-                onClick={() => handleSend()}
-                disabled={isTyping || !input.trim() || isInitializing}
-                aria-label="Send message"
-              >
-                <Send size={18} />
-              </button>
-            </div>
+            <button 
+              className="aura-send-btn" 
+              onClick={() => handleSend()}
+              disabled={!input.trim() || isTyping || isInitializing}
+              aria-label="Send message"
+            >
+              <Send size={20} />
+            </button>
           </div>
         </div>
       </div>

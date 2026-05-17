@@ -74,7 +74,10 @@ export const generateQuiz = async (topic: string = "general elections"): Promise
   try {
     const text = await explainConcept({ topic: `Generate a 3-question quiz about ${topic} in JSON array format: [{question, options, answer}]. Return ONLY JSON.`, level: 'intermediate' });
     const jsonMatch = text.match(/\[.*\]/s);
-    return JSON.parse(jsonMatch ? jsonMatch[0] : "[]");
+    if (!jsonMatch) throw new Error("No JSON match found");
+    const parsed = JSON.parse(jsonMatch[0]);
+    if (!Array.isArray(parsed) || parsed.length === 0) throw new Error("Invalid quiz format");
+    return parsed;
   } catch {
     return [{ question: "What is the minimum age to vote in India?", options: ["16", "18", "21", "25"], answer: "18" }];
   }
